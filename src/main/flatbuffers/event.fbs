@@ -1,6 +1,6 @@
 // IDL file for events.
 
-namespace Flatbuffers.events;
+namespace flatbuffers.events;
 
 enum EventType:byte {
     LOGIN,
