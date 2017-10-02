@@ -1,4 +1,9 @@
 package io.cloudtrust.keycloak.module.eventemitter;
 
-public class SerialisationFormat {
+/**
+ * Supported serialisation format by the event-emitter.
+ */
+public enum SerialisationFormat {
+    FLATBUFFER,
+    JSON;
 }

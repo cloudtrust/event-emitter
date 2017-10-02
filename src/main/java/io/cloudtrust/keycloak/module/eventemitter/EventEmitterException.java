@@ -1,4 +1,14 @@
 package io.cloudtrust.keycloak.module.eventemitter;
 
-public class EventEmitterException {
+/**
+ * Exception for EventEmitter Provider
+ */
+public class EventEmitterException extends Exception{
+
+    private String message;
+
+    public EventEmitterException(String message){
+        this.message = message;
+    }
+
 }
