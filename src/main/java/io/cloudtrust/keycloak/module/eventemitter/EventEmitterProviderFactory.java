@@ -42,7 +42,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     public EventListenerProvider create(KeycloakSession keycloakSession) {
         logger.debug("EventEmitterProviderFactory create("+targetUri+", "+format.name()+")");
         httpClient = HttpClients.createDefault();
-        return new EventEmitterProvider(httpClient, targetUri, format);
+        return new EventEmitterProvider(httpClient, targetUri, format, 10);
     }
 
     public void init(Config.Scope config) {
