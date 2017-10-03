@@ -14,26 +14,30 @@ import java.util.Map;
 
 /**
  * Utility class to serialize Event and AdminEvent in Flatbuffer or JSON format.
+ * In order to allow idempotence, a unique ID is added to the entity.
  */
 public class SerialisationUtils {
     private static final int FLATBUFFER_INIT_SIZE = 1024;
 
 
-    public static String toJson(AdminEvent adminEvent) throws JsonProcessingException {
+    public static String toJson(IdentifiedAdminEvent adminEvent) throws JsonProcessingException {
         return objToJson(adminEvent);
     }
 
-    public static String toJson(Event event) throws JsonProcessingException {
+    public static String toJson(IdentifiedEvent event) throws JsonProcessingException {
         return objToJson(event);
     }
 
-    private static String objToJson(Object event) throws JsonProcessingException {
+    private static String objToJson(Object obj) throws JsonProcessingException {
             ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(event);
+            return mapper.writeValueAsString(obj);
     }
 
-    public static ByteBuffer toFlat(Event event){
+    public static ByteBuffer toFlat(IdentifiedEvent event){
         FlatBufferBuilder builder = new FlatBufferBuilder(FLATBUFFER_INIT_SIZE);
+
+        // uid
+        long uid = event.getUid();
 
         // Time
         long time = event.getTime();
@@ -107,6 +111,7 @@ public class SerialisationUtils {
 
         flatbuffers.events.Event.startEvent(builder);
 
+        flatbuffers.events.Event.addUid(builder, uid);
         flatbuffers.events.Event.addTime(builder, time);
         flatbuffers.events.Event.addType(builder, type);
         flatbuffers.events.Event.addRealmId(builder, realmId);
@@ -124,8 +129,11 @@ public class SerialisationUtils {
         return builder.dataBuffer();
     }
 
-    public static ByteBuffer toFlat(AdminEvent adminEvent){
+    public static ByteBuffer toFlat(IdentifiedAdminEvent adminEvent){
         FlatBufferBuilder builder = new FlatBufferBuilder(FLATBUFFER_INIT_SIZE);
+
+        // uid
+        long uid = adminEvent.getUid();
 
         // Time
         long timeOffset = adminEvent.getTime();
@@ -145,19 +153,19 @@ public class SerialisationUtils {
             int authDetailsIpAddressOffset = 0;
 
             if (adminEvent.getAuthDetails().getRealmId() != null){
-                builder.createString(adminEvent.getAuthDetails().getRealmId());
+                authDetailsRealmIdOffset = builder.createString(adminEvent.getAuthDetails().getRealmId());
             }
 
             if (adminEvent.getAuthDetails().getClientId() != null) {
-                builder.createString(adminEvent.getAuthDetails().getClientId());
+                authDetailsClientIdOffset = builder.createString(adminEvent.getAuthDetails().getClientId());
             }
 
             if (adminEvent.getAuthDetails().getUserId() != null) {
-                builder.createString(adminEvent.getAuthDetails().getUserId());
+                authDetailsUserIdOffset = builder.createString(adminEvent.getAuthDetails().getUserId());
             }
 
             if (adminEvent.getAuthDetails().getIpAddress() != null) {
-                builder.createString(adminEvent.getAuthDetails().getIpAddress());
+                authDetailsIpAddressOffset = builder.createString(adminEvent.getAuthDetails().getIpAddress());
             }
 
             authDetailsOffset = flatbuffers.events.AuthDetails.createAuthDetails(builder,
@@ -194,7 +202,7 @@ public class SerialisationUtils {
         // Representation
         int representationOffset = 0;
         if (adminEvent.getRepresentation() != null ) {
-            representationOffset = builder.createString(adminEvent.getError());
+            representationOffset = builder.createString(adminEvent.getRepresentation());
         }
 
         // Error
@@ -205,8 +213,9 @@ public class SerialisationUtils {
 
         flatbuffers.events.AdminEvent.startAdminEvent(builder);
 
+        flatbuffers.events.AdminEvent.addUid(builder, uid);
         flatbuffers.events.AdminEvent.addTime(builder, timeOffset);
-        flatbuffers.events.Event.addRealmId(builder, realmIdOffset);
+        flatbuffers.events.AdminEvent.addRealmId(builder, realmIdOffset);
         flatbuffers.events.AdminEvent.addAuthDetails(builder, authDetailsOffset);
         flatbuffers.events.AdminEvent.addResourceType(builder, resourceTypeOffset);
         flatbuffers.events.AdminEvent.addOperationType(builder, operationTypeOffset);
@@ -219,5 +228,15 @@ public class SerialisationUtils {
         builder.finish(flatAdminEvent);
 
         return builder.dataBuffer();
+    }
+
+    public class Container {
+        long uid;
+        Object obj;
+
+        public Container(long uid, Object obj){
+            this.uid = uid;
+            this.obj = obj;
+        }
     }
 }

@@ -28,7 +28,7 @@ public class EventEmitterProviderTest {
 
     public void testToFlatEvent(){
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(
-                null,null, SerialisationFormat.FLATBUFFER, 10);
+                null,null, null, SerialisationFormat.FLATBUFFER, 10);
     }
 
     @Test
@@ -47,7 +47,7 @@ public class EventEmitterProviderTest {
         }
 
         HttpClient httpClient = HttpClients.createDefault();
-        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient, targetUri, SerialisationFormat.FLATBUFFER, 10);
+        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient, null, targetUri, SerialisationFormat.FLATBUFFER, 10);
 
         Event event = new Event();
         event.setTime(120000);

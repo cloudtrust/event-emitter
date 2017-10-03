@@ -3,6 +3,7 @@ package io.cloudtrust.keycloak.module.eventemitter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.flatbuffers.FlatBufferBuilder;
+import io.cloudtrust.keycloak.snowflake.IdGenerator;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -41,6 +42,7 @@ public class EventEmitterProvider implements EventListenerProvider{
     private FlatBufferBuilder builder = new FlatBufferBuilder(1024);
 
     HttpClient httpClient;
+    IdGenerator idGenerator;
 
     CircularFifo<Event> eventsBuffer;
     CircularFifo<AdminEvent> adminEventsBuffer;
@@ -53,12 +55,15 @@ public class EventEmitterProvider implements EventListenerProvider{
      * Constructor.
      *
      * @param httpClient to send serialized evetns to target server
+     * @param idGenerator for unique event ID
      * @param targetUri where serialized events are sent
      * @param format of the serialized events
      * @param bufferCapacity maximum events stored in buffer in case of failure to send to target
      */
-    public EventEmitterProvider(HttpClient httpClient, String targetUri, SerialisationFormat format, int bufferCapacity){
+    public EventEmitterProvider(HttpClient httpClient, IdGenerator idGenerator,
+                                String targetUri, SerialisationFormat format, int bufferCapacity){
         this.httpClient = httpClient;
+        this.idGenerator = idGenerator;
         this.targetUri = targetUri;
         this.format = format;
         eventsBuffer = new CircularFifo<>(bufferCapacity);
@@ -66,14 +71,17 @@ public class EventEmitterProvider implements EventListenerProvider{
     }
 
     public void onEvent(Event event) {
+        long uid = idGenerator.nextValidId();
+        IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
+
         try {
             switch (format) {
                 case FLATBUFFER:
-                    String json = SerialisationUtils.toJson(event);
+                    String json = SerialisationUtils.toJson(identifiedEvent);
                     sendJson(json);
                     break;
                 case JSON:
-                    ByteBuffer buffer = SerialisationUtils.toFlat(event);
+                    ByteBuffer buffer = SerialisationUtils.toFlat(identifiedEvent);
                     sendBytes(buffer);
                     break;
             }
@@ -83,14 +91,17 @@ public class EventEmitterProvider implements EventListenerProvider{
     }
 
     public void onEvent(AdminEvent adminEvent, boolean b) {
+        long uid = idGenerator.nextValidId();
+        IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
+
         try {
             switch (format) {
                 case FLATBUFFER:
-                    String json = SerialisationUtils.toJson(adminEvent);
+                    String json = SerialisationUtils.toJson(identifiedAdminEvent);
                     sendJson(json);
                     break;
                 case JSON:
-                    ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
+                    ByteBuffer buffer = SerialisationUtils.toFlat(identifiedAdminEvent);
                     sendBytes(buffer);
                     break;
             }

@@ -33,7 +33,7 @@ public class CircularFifoTest {
 
         for (int i = capacity; i > 0; i--) {
             fifo.remove();
-            Assert.assertEquals(i, fifo.size());
+            Assert.assertEquals(i-1, fifo.size());
         }
 
         try {

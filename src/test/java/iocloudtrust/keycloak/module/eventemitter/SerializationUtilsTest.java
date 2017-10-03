@@ -1,6 +1,8 @@
 package iocloudtrust.keycloak.module.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.cloudtrust.keycloak.module.eventemitter.IdentifiedAdminEvent;
+import io.cloudtrust.keycloak.module.eventemitter.IdentifiedEvent;
 import io.cloudtrust.keycloak.module.eventemitter.SerialisationUtils;
 import org.apache.commons.codec.binary.StringUtils;
 import org.junit.Assert;
@@ -19,15 +21,18 @@ import java.util.Objects;
 
 public class SerializationUtilsTest {
 
+    private long UID = 123456789L;
+
     @Test
     public void testEventToJson() {
         Event event = createEvent();
+
         try {
-            String jsonEvent = SerialisationUtils.toJson(event);
+            String jsonEvent = SerialisationUtils.toJson(new IdentifiedEvent(UID, event));
             Assert.assertEquals("{\"time\":120000,\"type\":\"CLIENT_LOGIN\"," +
                     "\"realmId\":\"realmId\",\"clientId\":\"clientId\",\"userId\":\"userId\"," +
                     "\"sessionId\":\"sessionId\",\"ipAddress\":\"127.0.0.1\",\"error\":\"Error\"," +
-                    "\"details\":{\"detailsKey2\":\"detailsValue2\",\"detailsKey1\":\"detailValue1\"}}", jsonEvent);
+                    "\"details\":{\"detailsKey2\":\"detailsValue2\",\"detailsKey1\":\"detailValue1\"},\"uid\":123456789}", jsonEvent);
         } catch (JsonProcessingException e) {
             Assert.fail();
         }
@@ -37,10 +42,10 @@ public class SerializationUtilsTest {
     public void testEventMinimalToJson(){
         Event eventMinimal = createMinimalEvent();
         try {
-            String jsonEvent = SerialisationUtils.toJson(eventMinimal);
+            String jsonEvent = SerialisationUtils.toJson(new IdentifiedEvent(UID, eventMinimal));
             Assert.assertEquals("{\"time\":120000,\"type\":\"CLIENT_LOGIN\"," +
                     "\"realmId\":null,\"clientId\":null,\"userId\":null,\"sessionId\":null," +
-                    "\"ipAddress\":null,\"error\":null,\"details\":null}", jsonEvent );
+                    "\"ipAddress\":null,\"error\":null,\"details\":null,\"uid\":123456789}", jsonEvent );
         } catch (JsonProcessingException e) {
             Assert.fail();
         }
@@ -51,8 +56,8 @@ public class SerializationUtilsTest {
     public void testAdminEventToJson(){
         AdminEvent event = createAdminEvent();
         try {
-            String jsonEvent = SerialisationUtils.toJson(event);
-            Assert.assertEquals("{\"time\":120000,\"realmId\":\"realmId\",\"authDetails\":{\"realmId\":\"authDetails-realmId\",\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\"},\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\"}", jsonEvent);
+            String jsonEvent = SerialisationUtils.toJson(new IdentifiedAdminEvent(UID, event));
+            Assert.assertEquals("{\"time\":120000,\"realmId\":\"realmId\",\"authDetails\":{\"realmId\":\"authDetails-realmId\",\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\"},\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\",\"uid\":123456789}", jsonEvent);
         } catch (JsonProcessingException e) {
             Assert.fail();
         }
@@ -62,8 +67,8 @@ public class SerializationUtilsTest {
     public void testMinimalAdminEventToJson(){
         AdminEvent event = createMinimalAdminEvent();
         try {
-            String jsonEvent = SerialisationUtils.toJson(event);
-            Assert.assertEquals("{\"time\":120000,\"realmId\":null,\"authDetails\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null}", jsonEvent);
+            String jsonEvent = SerialisationUtils.toJson(new IdentifiedAdminEvent(UID, event));
+            Assert.assertEquals("{\"time\":120000,\"realmId\":null,\"authDetails\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null,\"uid\":123456789}", jsonEvent);
         } catch (JsonProcessingException e) {
             Assert.fail();
         }
@@ -72,33 +77,37 @@ public class SerializationUtilsTest {
     @Test
     public void testEventToFlatbuffers(){
         Event event = createEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(event);
+        ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedEvent(UID, event));
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
         Assert.assertTrue(equals(event, deserializedEvent));
+        Assert.assertEquals(UID, deserializedEvent.uid());
     }
 
     @Test
     public void testMinimalEventToFlatbuffers(){
         Event event = createMinimalEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(event);
+        ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedEvent(UID, event));
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
         Assert.assertTrue(equals(event, deserializedEvent));
+        Assert.assertEquals(UID, deserializedEvent.uid());
     }
 
     @Test
     public void testAdminEventToFlatbuffers(){
         AdminEvent adminEvent = createAdminEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
+        ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedAdminEvent(UID, adminEvent));
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
         Assert.assertTrue(equals(adminEvent, deserializedAdminEvent));
+        Assert.assertEquals(UID, deserializedAdminEvent.uid());
     }
 
     @Test
     public void testMinimalAdminEventToFlatbuffers(){
         AdminEvent adminEvent = createMinimalAdminEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
+        ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedAdminEvent(UID, adminEvent));
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
         Assert.assertTrue(equals(adminEvent, deserializedAdminEvent));
+        Assert.assertEquals(UID, deserializedAdminEvent.uid());
     }
 
     private Event createEvent() {

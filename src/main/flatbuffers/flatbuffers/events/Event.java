@@ -14,25 +14,27 @@ public final class Event extends Table {
   public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
   public Event __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
-  public long time() { int o = __offset(4); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public byte type() { int o = __offset(6); return o != 0 ? bb.get(o + bb_pos) : 0; }
-  public String realmId() { int o = __offset(8); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer realmIdAsByteBuffer() { return __vector_as_bytebuffer(8, 1); }
-  public String clientId() { int o = __offset(10); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer clientIdAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
-  public String userId() { int o = __offset(12); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer userIdAsByteBuffer() { return __vector_as_bytebuffer(12, 1); }
-  public String sessionId() { int o = __offset(14); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer sessionIdAsByteBuffer() { return __vector_as_bytebuffer(14, 1); }
-  public String ipAddress() { int o = __offset(16); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer ipAddressAsByteBuffer() { return __vector_as_bytebuffer(16, 1); }
-  public String error() { int o = __offset(18); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer errorAsByteBuffer() { return __vector_as_bytebuffer(18, 1); }
+  public long uid() { int o = __offset(4); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long time() { int o = __offset(6); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public byte type() { int o = __offset(8); return o != 0 ? bb.get(o + bb_pos) : 0; }
+  public String realmId() { int o = __offset(10); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer realmIdAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
+  public String clientId() { int o = __offset(12); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer clientIdAsByteBuffer() { return __vector_as_bytebuffer(12, 1); }
+  public String userId() { int o = __offset(14); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer userIdAsByteBuffer() { return __vector_as_bytebuffer(14, 1); }
+  public String sessionId() { int o = __offset(16); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer sessionIdAsByteBuffer() { return __vector_as_bytebuffer(16, 1); }
+  public String ipAddress() { int o = __offset(18); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer ipAddressAsByteBuffer() { return __vector_as_bytebuffer(18, 1); }
+  public String error() { int o = __offset(20); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer errorAsByteBuffer() { return __vector_as_bytebuffer(20, 1); }
   public Tuple details(int j) { return details(new Tuple(), j); }
-  public Tuple details(Tuple obj, int j) { int o = __offset(20); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
-  public int detailsLength() { int o = __offset(20); return o != 0 ? __vector_len(o) : 0; }
+  public Tuple details(Tuple obj, int j) { int o = __offset(22); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
+  public int detailsLength() { int o = __offset(22); return o != 0 ? __vector_len(o) : 0; }
 
   public static int createEvent(FlatBufferBuilder builder,
+      long uid,
       long time,
       byte type,
       int realmIdOffset,
@@ -42,8 +44,9 @@ public final class Event extends Table {
       int ipAddressOffset,
       int errorOffset,
       int detailsOffset) {
-    builder.startObject(9);
+    builder.startObject(10);
     Event.addTime(builder, time);
+    Event.addUid(builder, uid);
     Event.addDetails(builder, detailsOffset);
     Event.addError(builder, errorOffset);
     Event.addIpAddress(builder, ipAddressOffset);
@@ -55,16 +58,17 @@ public final class Event extends Table {
     return Event.endEvent(builder);
   }
 
-  public static void startEvent(FlatBufferBuilder builder) { builder.startObject(9); }
-  public static void addTime(FlatBufferBuilder builder, long time) { builder.addLong(0, time, 0L); }
-  public static void addType(FlatBufferBuilder builder, byte type) { builder.addByte(1, type, 0); }
-  public static void addRealmId(FlatBufferBuilder builder, int realmIdOffset) { builder.addOffset(2, realmIdOffset, 0); }
-  public static void addClientId(FlatBufferBuilder builder, int clientIdOffset) { builder.addOffset(3, clientIdOffset, 0); }
-  public static void addUserId(FlatBufferBuilder builder, int userIdOffset) { builder.addOffset(4, userIdOffset, 0); }
-  public static void addSessionId(FlatBufferBuilder builder, int sessionIdOffset) { builder.addOffset(5, sessionIdOffset, 0); }
-  public static void addIpAddress(FlatBufferBuilder builder, int ipAddressOffset) { builder.addOffset(6, ipAddressOffset, 0); }
-  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(7, errorOffset, 0); }
-  public static void addDetails(FlatBufferBuilder builder, int detailsOffset) { builder.addOffset(8, detailsOffset, 0); }
+  public static void startEvent(FlatBufferBuilder builder) { builder.startObject(10); }
+  public static void addUid(FlatBufferBuilder builder, long uid) { builder.addLong(0, uid, 0L); }
+  public static void addTime(FlatBufferBuilder builder, long time) { builder.addLong(1, time, 0L); }
+  public static void addType(FlatBufferBuilder builder, byte type) { builder.addByte(2, type, 0); }
+  public static void addRealmId(FlatBufferBuilder builder, int realmIdOffset) { builder.addOffset(3, realmIdOffset, 0); }
+  public static void addClientId(FlatBufferBuilder builder, int clientIdOffset) { builder.addOffset(4, clientIdOffset, 0); }
+  public static void addUserId(FlatBufferBuilder builder, int userIdOffset) { builder.addOffset(5, userIdOffset, 0); }
+  public static void addSessionId(FlatBufferBuilder builder, int sessionIdOffset) { builder.addOffset(6, sessionIdOffset, 0); }
+  public static void addIpAddress(FlatBufferBuilder builder, int ipAddressOffset) { builder.addOffset(7, ipAddressOffset, 0); }
+  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(8, errorOffset, 0); }
+  public static void addDetails(FlatBufferBuilder builder, int detailsOffset) { builder.addOffset(9, detailsOffset, 0); }
   public static int createDetailsVector(FlatBufferBuilder builder, int[] data) { builder.startVector(4, data.length, 4); for (int i = data.length - 1; i >= 0; i--) builder.addOffset(data[i]); return builder.endVector(); }
   public static void startDetailsVector(FlatBufferBuilder builder, int numElems) { builder.startVector(4, numElems, 4); }
   public static int endEvent(FlatBufferBuilder builder) {
