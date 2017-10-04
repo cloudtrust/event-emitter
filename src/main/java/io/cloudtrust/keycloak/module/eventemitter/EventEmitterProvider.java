@@ -1,37 +1,28 @@
 package io.cloudtrust.keycloak.module.eventemitter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.flatbuffers.FlatBufferBuilder;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
-import org.apache.http.HttpEntity;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import java.nio.ByteBuffer;
+import java.util.function.Function;
 
 
 /**
  * EventEmitterProvider.
  * Provider which emit a serialized version of the event to the targetUri.
  * Serialization format can either be flatbuffer or json according to constructor parameter.
-
  */
 public class EventEmitterProvider implements EventListenerProvider{
 
@@ -44,9 +35,8 @@ public class EventEmitterProvider implements EventListenerProvider{
     HttpClient httpClient;
     IdGenerator idGenerator;
 
-    CircularFifo<Event> eventsBuffer;
-    CircularFifo<AdminEvent> adminEventsBuffer;
-
+    CircularFifoQueue<IdentifiedEvent> pendingEvents;
+    CircularFifoQueue<IdentifiedAdminEvent> pendingAdminEvents;
 
     String targetUri;
     SerialisationFormat format;
@@ -54,65 +44,116 @@ public class EventEmitterProvider implements EventListenerProvider{
     /**
      * Constructor.
      *
-     * @param httpClient to send serialized evetns to target server
-     * @param idGenerator for unique event ID
+     * @param httpClient to send serialized events to target server
+     * @param idGenerator for unique event ID genration
      * @param targetUri where serialized events are sent
      * @param format of the serialized events
-     * @param bufferCapacity maximum events stored in buffer in case of failure to send to target
+     * @param pendingEvents to send due to failure during previous trial
+     * @param pendingAdminEvents to send due to failure during previous trial
      */
     public EventEmitterProvider(HttpClient httpClient, IdGenerator idGenerator,
-                                String targetUri, SerialisationFormat format, int bufferCapacity){
+                                String targetUri, SerialisationFormat format,
+                                CircularFifoQueue<IdentifiedEvent> pendingEvents,
+                                CircularFifoQueue<IdentifiedAdminEvent> pendingAdminEvents){
+        logger.debug("EventEmitterProvider contructor call");
         this.httpClient = httpClient;
         this.idGenerator = idGenerator;
         this.targetUri = targetUri;
         this.format = format;
-        eventsBuffer = new CircularFifo<>(bufferCapacity);
-        adminEventsBuffer = new CircularFifo<>(bufferCapacity);
+        this.pendingEvents = pendingEvents;
+        this.pendingAdminEvents = pendingAdminEvents;
     }
 
     public void onEvent(Event event) {
+        logger.debug("EventEmitterProvider onEvent call for Event");
+        logger.debugf("Pending Events to send stored in buffer: %d", pendingEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
+        pendingEvents.add(identifiedEvent);
 
-        try {
-            switch (format) {
-                case FLATBUFFER:
-                    String json = SerialisationUtils.toJson(identifiedEvent);
-                    sendJson(json);
-                    break;
-                case JSON:
-                    ByteBuffer buffer = SerialisationUtils.toFlat(identifiedEvent);
-                    sendBytes(buffer);
-                    break;
-            }
-        }catch(IOException | EventEmitterException e){
-            logger.info("Failed to send event to target", e);
-        }
+        sendEvents();
     }
 
+
     public void onEvent(AdminEvent adminEvent, boolean b) {
+        logger.debug("EventEmitterProvider onEvent call for AdminEvent");
+        logger.debugf("Pending AdminEvents to send stored in buffer: %d", pendingAdminEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
+        pendingAdminEvents.add(identifiedAdminEvent);
 
-        try {
-            switch (format) {
-                case FLATBUFFER:
-                    String json = SerialisationUtils.toJson(identifiedAdminEvent);
-                    sendJson(json);
-                    break;
-                case JSON:
-                    ByteBuffer buffer = SerialisationUtils.toFlat(identifiedAdminEvent);
-                    sendBytes(buffer);
-                    break;
-            }
-        }catch(IOException | EventEmitterException e){
-            logger.info("Failed to send event to target", e);
-        }
+        sendEvents();
     }
 
     public void close() {
-
+        //Nothing to do
     }
+
+    private void sendEvents() {
+        switch (format) {
+            case FLATBUFFER:
+                sendEventsWithJsonFormat();
+            default:
+                logger.infov("Unknown format type (%s), JSON will be used", format.name());
+            case JSON:
+                sendEventsWithFlatbufferFormat();
+        }
+    }
+
+
+    private void sendEventsWithJsonFormat() {
+        for (int i=0; i < pendingEvents.size(); i++){
+            IdentifiedEvent event = pendingEvents.remove();
+
+            try {
+                String json = SerialisationUtils.toJson(event);
+                sendJson(json);
+            } catch (EventEmitterException | IOException e) {
+                pendingEvents.add(event);
+                logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
+            }
+        }
+
+        for (int i=0; i < pendingAdminEvents.size(); i++){
+            IdentifiedAdminEvent event = pendingAdminEvents.remove();
+
+            try {
+                String json = SerialisationUtils.toJson(event);
+                sendJson(json);
+            } catch (EventEmitterException | IOException e) {
+                pendingAdminEvents.add(event);
+                logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
+            }
+        }
+    }
+
+
+    private void sendEventsWithFlatbufferFormat() {
+        for (int i=0; i < pendingEvents.size(); i++){
+            IdentifiedEvent event = pendingEvents.remove();
+
+            try {
+                ByteBuffer buffer = SerialisationUtils.toFlat(event);
+                sendBytes(buffer);
+            } catch (EventEmitterException | IOException e) {
+                pendingEvents.add(event);
+                logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
+            }
+        }
+
+        for (int i=0; i < pendingAdminEvents.size(); i++){
+            IdentifiedAdminEvent event = pendingAdminEvents.remove();
+
+            try {
+                ByteBuffer buffer = SerialisationUtils.toFlat(event);
+                sendBytes(buffer);
+            } catch (EventEmitterException | IOException e) {
+                pendingAdminEvents.add(event);
+                logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
+            }
+        }
+    }
+
 
     private void sendBytes(ByteBuffer buffer) throws IOException, EventEmitterException {
         byte[] b = new byte[buffer.remaining()];
@@ -146,5 +187,7 @@ public class EventEmitterProvider implements EventListenerProvider{
             throw new EventEmitterException("Target server failure.");
         }
     }
+
+
 
 }

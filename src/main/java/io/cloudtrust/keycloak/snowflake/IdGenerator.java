@@ -1,9 +1,9 @@
 package io.cloudtrust.keycloak.snowflake;
 
 
-//import static com.google.common.base.Preconditions.checkArgument;
-//import static com.google.common.base.Preconditions.checkNotNull;
-//import com.google.common.base.MoreObjects;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.MoreObjects;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -40,27 +40,27 @@ public class IdGenerator {
 
     public IdGenerator(final int keycloakId, final int datacenterId, final long startSequence) {
 
-//        checkNotNull(keycloakId);
-//        checkArgument(keycloakId >= 0, String.format("component Id can't be greater than %d or less than 0",
-//                MAX_COMPONENT_ID));
-//        checkArgument(keycloakId <= MAX_COMPONENT_ID, String.format("component Id can't be greater than %d "
-//                + "or less than 0", MAX_COMPONENT_ID));
-//
-//        checkNotNull(datacenterId);
-//        checkArgument(datacenterId >= 0, String.format("Datacenter ID can't be greater than %d or less than 0",
-//                MAX_DATACENTER_ID));
-//        checkArgument(datacenterId <= MAX_DATACENTER_ID, String.format("Datacenter ID can't be greater than %d or "
-//                + "less than 0", MAX_DATACENTER_ID));
-//
-//        checkNotNull(startSequence);
+    checkNotNull(keycloakId);
+    checkArgument(keycloakId >= 0, String.format("component Id can't be greater than %d or less than 0",
+            MAX_KEYCLOAK_ID));
+    checkArgument(keycloakId <= MAX_KEYCLOAK_ID, String.format("component Id can't be greater than %d "
+            + "or less than 0", MAX_KEYCLOAK_ID));
+
+    checkNotNull(datacenterId);
+    checkArgument(datacenterId >= 0, String.format("Datacenter ID can't be greater than %d or less than 0",
+            MAX_DATACENTER_ID));
+    checkArgument(datacenterId <= MAX_DATACENTER_ID, String.format("Datacenter ID can't be greater than %d or "
+            + "less than 0", MAX_DATACENTER_ID));
+
+    checkNotNull(startSequence);
 
         this.keycloakId = keycloakId;
         this.datacenterId = datacenterId;
 
-        logger.infof("IdGenerator general settings: timestamp left shift = {}, datacenter ID bits = {}, "
-                        + "keycloak ID bits = {}, sequence bits = {}", TIMESTAMP_LEFT_SHIFT, DATACENTER_ID_BITS,
+        logger.infof("IdGenerator general settings: timestamp left shift = %d, datacenter ID bits = %d, "
+                        + "keycloak ID bits = %d, sequence bits = %d", TIMESTAMP_LEFT_SHIFT, DATACENTER_ID_BITS,
                 KEYCLOAK_ID_BITS, SEQUENCE_BITS);
-        logger.infof("IdGenerator instance settings: datacenter ID = {}, keycloak ID = {}", datacenterId, keycloakId);
+        logger.infof("IdGenerator instance settings: datacenter ID = %d, keycloak ID = %d", datacenterId, keycloakId);
         sequence = new AtomicLong(startSequence);
 
     }
@@ -78,7 +78,7 @@ public class IdGenerator {
         final long prevTimestamp = lastTimestamp.get();
 
         if (timestamp < prevTimestamp) {
-            logger.errorf("clock is moving backwards. Rejecting requests until {}", prevTimestamp);
+            logger.errorf("clock is moving backwards. Rejecting requests until %d", prevTimestamp);
             throw new InvalidSystemClock(String.format("Clock moved backwards. Refusing to generate id "
                     + "for %d milliseconds", prevTimestamp - timestamp));
         }
@@ -99,8 +99,8 @@ public class IdGenerator {
                 | (keycloakId << KEYCLOAK_ID_SHIFT) | curSequence;
 
         logger.debugf(
-                "prevTimestamp = {}, timestamp = {}, sequence = {}, id = {}",
-                prevTimestamp, timestamp, sequence, id);
+                "prevTimestamp = %d, timestamp = %d, sequence = %d, id = %d",
+                prevTimestamp, timestamp, sequence.get(), id);
 
         return id;
     }
@@ -111,7 +111,7 @@ public class IdGenerator {
             try {
                 id = nextId();
             } catch (InvalidSystemClock invalidSystemClock) {
-                logger.infof("InvalidSystemClock: {}", invalidSystemClock);
+                logger.infof("InvalidSystemClock: %s", invalidSystemClock);
             }
         } while (id == -1L);
         return id;
@@ -140,15 +140,15 @@ public class IdGenerator {
         return sequence;
     }
 
-//    @Override
-//    public String toString() {
-//        return MoreObjects.toStringHelper(this)
-//                .add("componentId", componentId)
-//                .add("datacenterId", datacenterId)
-//                .add("timestamp left shift", TIMESTAMP_LEFT_SHIFT)
-//                .add("datacenter ID bits", DATACENTER_ID_BITS)
-//                .add("component ID bits", COMPONENT_ID_BITS)
-//                .add("sequence bits", SEQUENCE_BITS)
-//                .toString();
-//    }
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("componentId", keycloakId)
+                .add("datacenterId", datacenterId)
+                .add("timestamp left shift", TIMESTAMP_LEFT_SHIFT)
+                .add("datacenter ID bits", DATACENTER_ID_BITS)
+                .add("component ID bits", KEYCLOAK_ID_BITS)
+                .add("sequence bits", SEQUENCE_BITS)
+                .toString();
+    }
 }

@@ -18,6 +18,7 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
             <version>${keycloak.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -38,7 +39,6 @@
             <version>${jboss.logging.version}</version>
         </dependency>
 
-
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -57,6 +57,19 @@
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- 3rd Party libraries-->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>23.1-jre</version>
         </dependency>
 
         <!-- Test dependencies -->

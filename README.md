@@ -20,3 +20,35 @@ Config exemple
 All parameters are mandatory
 
 If any parameter is missing or invalid, keycloak will fails to start.
+
+
+# flatbuffers
+generation:
+src/main/flatbuffers
+flatc --java events.fbs
+
+Copy classes in src/main/java/flatbuffers.events
+
+
+
+#Keycloak 
+
+create layer
+
+enable layer
+
+
+
+
+<spi name="eventsListener">
+               <provider name="event-emitter" enabled="true">
+                   <properties>
+                       <property name="format" value="JSON"/>
+                       <property name="targetUri" value="http://localhost:8888/event-receiver"/>
+                   </properties>
+               </provider>
+           </spi>
+
+
+create is called multiple times
+call init for stuff that we want called once (creation of objects)

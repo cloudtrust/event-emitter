@@ -1,4 +1,4 @@
-package iocloudtrust.keycloak.module.eventemitter;
+package io.cloudtrust.keycloak.module.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cloudtrust.keycloak.module.eventemitter.IdentifiedAdminEvent;
