@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.keycloak.events.admin.AdminEvent;
 
 public class EventEmitterProviderTest {
