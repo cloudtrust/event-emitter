@@ -7,12 +7,16 @@ public class IdentifiedEvent extends Event {
 
     private long uid;
 
+    IdentifiedEvent(){
+        super();
+    }
+
     /**
      * Constructor by copy which add a uid to Event
-     * @param uid
-     * @param event
+     * @param uid for idempotence
+     * @param event original event
      */
-    public IdentifiedEvent(long uid, Event event){
+    IdentifiedEvent(long uid, Event event){
         this.uid = uid;
 
         setTime(event.getTime());
@@ -28,5 +32,9 @@ public class IdentifiedEvent extends Event {
 
     public long getUid(){
         return uid;
+    }
+
+    public void setUid(long uid){
+        this.uid = uid;
     }
 }

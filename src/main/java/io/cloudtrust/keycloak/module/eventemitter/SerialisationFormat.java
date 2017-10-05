@@ -5,5 +5,5 @@ package io.cloudtrust.keycloak.module.eventemitter;
  */
 public enum SerialisationFormat {
     FLATBUFFER,
-    JSON;
+    JSON
 }

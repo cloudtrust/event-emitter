@@ -89,7 +89,7 @@
         <!-- Versions -->
         <keycloak.version>3.2.1.Final</keycloak.version>
         <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
+        <apache.httpcomponents.httpcore.version>4.4.5</apache.httpcomponents.httpcore.version>
         <jboss.logging.version>3.3.0.Final</jboss.logging.version>
         <jackson.version>2.5.4</jackson.version>
         <junit.version>4.12</junit.version>

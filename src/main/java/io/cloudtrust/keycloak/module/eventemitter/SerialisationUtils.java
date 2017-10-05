@@ -3,8 +3,6 @@ package io.cloudtrust.keycloak.module.eventemitter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.flatbuffers.FlatBufferBuilder;
-import org.keycloak.events.Event;
-import org.keycloak.events.admin.AdminEvent;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -16,15 +14,15 @@ import java.util.Map;
  * Utility class to serialize Event and AdminEvent in Flatbuffer or JSON format.
  * In order to allow idempotence, a unique ID is added to the entity.
  */
-public class SerialisationUtils {
+class SerialisationUtils {
     private static final int FLATBUFFER_INIT_SIZE = 1024;
 
 
-    public static String toJson(IdentifiedAdminEvent adminEvent) throws JsonProcessingException {
+    static String toJson(IdentifiedAdminEvent adminEvent) throws JsonProcessingException {
         return objToJson(adminEvent);
     }
 
-    public static String toJson(IdentifiedEvent event) throws JsonProcessingException {
+    static String toJson(IdentifiedEvent event) throws JsonProcessingException {
         return objToJson(event);
     }
 
@@ -33,7 +31,7 @@ public class SerialisationUtils {
             return mapper.writeValueAsString(obj);
     }
 
-    public static ByteBuffer toFlat(IdentifiedEvent event){
+    static ByteBuffer toFlat(IdentifiedEvent event){
         FlatBufferBuilder builder = new FlatBufferBuilder(FLATBUFFER_INIT_SIZE);
 
         // uid
@@ -129,7 +127,7 @@ public class SerialisationUtils {
         return builder.dataBuffer();
     }
 
-    public static ByteBuffer toFlat(IdentifiedAdminEvent adminEvent){
+    static ByteBuffer toFlat(IdentifiedAdminEvent adminEvent){
         FlatBufferBuilder builder = new FlatBufferBuilder(FLATBUFFER_INIT_SIZE);
 
         // uid
@@ -230,13 +228,4 @@ public class SerialisationUtils {
         return builder.dataBuffer();
     }
 
-    public class Container {
-        long uid;
-        Object obj;
-
-        public Container(long uid, Object obj){
-            this.uid = uid;
-            this.obj = obj;
-        }
-    }
 }

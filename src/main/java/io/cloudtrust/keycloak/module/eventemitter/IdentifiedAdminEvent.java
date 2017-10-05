@@ -9,10 +9,10 @@ public class IdentifiedAdminEvent extends AdminEvent{
     /**
      * Constructor by copy which add a uid to AdminEvent.
      *
-     * @param uid
-     * @param adminEvent
+     * @param uid for idempotence
+     * @param adminEvent original adminEvent
      */
-    public IdentifiedAdminEvent(long uid, AdminEvent adminEvent){
+    IdentifiedAdminEvent(long uid, AdminEvent adminEvent){
         this.uid = uid;
 
         setTime(adminEvent.getTime());

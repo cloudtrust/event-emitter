@@ -1,10 +1,6 @@
 package io.cloudtrust.keycloak.module.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.cloudtrust.keycloak.module.eventemitter.IdentifiedAdminEvent;
-import io.cloudtrust.keycloak.module.eventemitter.IdentifiedEvent;
-import io.cloudtrust.keycloak.module.eventemitter.SerialisationUtils;
-import org.apache.commons.codec.binary.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.Event;

@@ -1,10 +1,8 @@
 package io.cloudtrust.keycloak.module.eventemitter;
 
-import com.google.flatbuffers.FlatBufferBuilder;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
@@ -16,7 +14,7 @@ import org.keycloak.events.admin.AdminEvent;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.function.Function;
+import java.util.concurrent.LinkedBlockingQueue;
 
 
 /**
@@ -30,16 +28,12 @@ public class EventEmitterProvider implements EventListenerProvider{
 
     private final static int HTTP_OK = 200;
 
-    private FlatBufferBuilder builder = new FlatBufferBuilder(1024);
-
-    HttpClient httpClient;
-    IdGenerator idGenerator;
-
-    CircularFifoQueue<IdentifiedEvent> pendingEvents;
-    CircularFifoQueue<IdentifiedAdminEvent> pendingAdminEvents;
-
-    String targetUri;
-    SerialisationFormat format;
+    private HttpClient httpClient;
+    private IdGenerator idGenerator;
+    private ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents;
+    private ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents;
+    private String targetUri;
+    private SerialisationFormat format;
 
     /**
      * Constructor.
@@ -51,10 +45,10 @@ public class EventEmitterProvider implements EventListenerProvider{
      * @param pendingEvents to send due to failure during previous trial
      * @param pendingAdminEvents to send due to failure during previous trial
      */
-    public EventEmitterProvider(HttpClient httpClient, IdGenerator idGenerator,
+    EventEmitterProvider(HttpClient httpClient, IdGenerator idGenerator,
                                 String targetUri, SerialisationFormat format,
-                                CircularFifoQueue<IdentifiedEvent> pendingEvents,
-                                CircularFifoQueue<IdentifiedAdminEvent> pendingAdminEvents){
+                         ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents,
+                         ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents){
         logger.debug("EventEmitterProvider contructor call");
         this.httpClient = httpClient;
         this.idGenerator = idGenerator;
@@ -69,7 +63,7 @@ public class EventEmitterProvider implements EventListenerProvider{
         logger.debugf("Pending Events to send stored in buffer: %d", pendingEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
-        pendingEvents.add(identifiedEvent);
+        pendingEvents.offer(identifiedEvent);
 
         sendEvents();
     }
@@ -80,7 +74,7 @@ public class EventEmitterProvider implements EventListenerProvider{
         logger.debugf("Pending AdminEvents to send stored in buffer: %d", pendingAdminEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
-        pendingAdminEvents.add(identifiedAdminEvent);
+        pendingAdminEvents.offer(identifiedAdminEvent);
 
         sendEvents();
     }
@@ -92,36 +86,40 @@ public class EventEmitterProvider implements EventListenerProvider{
     private void sendEvents() {
         switch (format) {
             case FLATBUFFER:
-                sendEventsWithJsonFormat();
+                sendEventsWithFlatbufferFormat();
+                break;
             default:
                 logger.infov("Unknown format type (%s), JSON will be used", format.name());
             case JSON:
-                sendEventsWithFlatbufferFormat();
+                sendEventsWithJsonFormat();
+                break;
         }
     }
 
 
     private void sendEventsWithJsonFormat() {
-        for (int i=0; i < pendingEvents.size(); i++){
-            IdentifiedEvent event = pendingEvents.remove();
+        int pendingEventsSize = pendingEvents.size();
+        for (int i=0; i < pendingEventsSize; i++){
+            IdentifiedEvent event = pendingEvents.poll();
 
             try {
                 String json = SerialisationUtils.toJson(event);
                 sendJson(json);
             } catch (EventEmitterException | IOException e) {
-                pendingEvents.add(event);
+                pendingEvents.offer(event);
                 logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
             }
         }
 
-        for (int i=0; i < pendingAdminEvents.size(); i++){
-            IdentifiedAdminEvent event = pendingAdminEvents.remove();
+        int pendingAdminEventsSize = pendingAdminEvents.size();
+        for (int i=0; i < pendingAdminEventsSize; i++){
+            IdentifiedAdminEvent event = pendingAdminEvents.poll();
 
             try {
                 String json = SerialisationUtils.toJson(event);
                 sendJson(json);
             } catch (EventEmitterException | IOException e) {
-                pendingAdminEvents.add(event);
+                pendingAdminEvents.offer(event);
                 logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
             }
         }
@@ -129,26 +127,28 @@ public class EventEmitterProvider implements EventListenerProvider{
 
 
     private void sendEventsWithFlatbufferFormat() {
-        for (int i=0; i < pendingEvents.size(); i++){
-            IdentifiedEvent event = pendingEvents.remove();
+        int pendingEventsSize = pendingEvents.size();
+        for (int i=0; i < pendingEventsSize; i++){
+            IdentifiedEvent event = pendingEvents.poll();
 
             try {
                 ByteBuffer buffer = SerialisationUtils.toFlat(event);
                 sendBytes(buffer);
             } catch (EventEmitterException | IOException e) {
-                pendingEvents.add(event);
+                pendingEvents.offer(event);
                 logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
             }
         }
 
-        for (int i=0; i < pendingAdminEvents.size(); i++){
-            IdentifiedAdminEvent event = pendingAdminEvents.remove();
+        int pendingAdminEventsSize = pendingAdminEvents.size();
+        for (int i=0; i < pendingAdminEventsSize; i++){
+            IdentifiedAdminEvent event = pendingAdminEvents.poll();
 
             try {
                 ByteBuffer buffer = SerialisationUtils.toFlat(event);
                 sendBytes(buffer);
             } catch (EventEmitterException | IOException e) {
-                pendingAdminEvents.add(event);
+                pendingAdminEvents.offer(event);
                 logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
             }
         }

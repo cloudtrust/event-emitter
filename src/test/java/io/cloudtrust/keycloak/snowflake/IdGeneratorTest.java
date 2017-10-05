@@ -52,7 +52,7 @@ public class IdGeneratorTest {
         final Set<Long> ids = new HashSet<>();
         final int count = 2000000;
         for (int i = 0; i < count; i++) {
-            Long id = idGenerator.nextValidId();;
+            Long id = idGenerator.nextValidId();
             if (ids.contains(id)) {
                 System.out.println(Long.toBinaryString(id));
             } else {
@@ -109,9 +109,9 @@ public class IdGeneratorTest {
     }
 
     class StaticTimeGenerator extends IdGenerator {
-        public long time = 1L;
+        long time = 1L;
 
-        public StaticTimeGenerator(final Integer componentId, final Integer datacenterId) {
+        StaticTimeGenerator(final Integer componentId, final Integer datacenterId) {
             super(componentId, datacenterId);
         }
 

@@ -16,6 +16,7 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Factory for EventEmitterProvider.
@@ -50,8 +51,8 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
 
     private CloseableHttpClient httpClient;
     private IdGenerator idGenerator;
-    private CircularFifoQueue<IdentifiedEvent> pendingEventsToSend;
-    private CircularFifoQueue<IdentifiedAdminEvent> pendingAdminEventsToSend;
+    private ConcurrentEvictingQueue<IdentifiedEvent> pendingEventsToSend;
+    private ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEventsToSend;
 
 
 
@@ -131,8 +132,8 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
         // Initialisation
         httpClient = HttpClients.createDefault();
         idGenerator = new IdGenerator(keycloakId, datacenterId);
-        pendingEventsToSend = new CircularFifoQueue<>(bufferCapacity);
-        pendingAdminEventsToSend = new CircularFifoQueue<>(bufferCapacity);
+        pendingEventsToSend = new ConcurrentEvictingQueue<>(bufferCapacity);
+        pendingAdminEventsToSend = new ConcurrentEvictingQueue<>(bufferCapacity);
 
     }
 
@@ -153,7 +154,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     }
 
     public Map<String, String> getOperationalInfo() {
-        Map<String, String> ret = new LinkedHashMap();
+        Map<String, String> ret = new LinkedHashMap<>();
         ret.put("Version", PROVIDER_VERSION);
         ret.put("Name", PROVIDER_NAME);
         ret.put("Target URI", targetUri);
