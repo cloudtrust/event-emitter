@@ -116,29 +116,40 @@ layers=keycloak,eventemitter
 In __standalone.xml__, add the new module and configure it
 
 ```xml
-<web-context>auth</web-context>
-<providers>
-    <provider>module:com.quest.keycloak-wsfed</provider>
-    ...
-</providers>
-...
-<theme>
-    <modules>
-            <module>
-                    com.quest.keycloak-wsfed
-            </module>
-    </modules>
-    ...
-</theme>
-...
+<!--[...]-->
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+    <web-context>auth</web-context>
+    <providers>
+        <!--[...]-->
+        <provider>module:com.quest.keycloak-wsfed</provider>
+        <!--[...]-->
+    </providers>
+    <!--[...]-->
+    <spi name="eventsListener">
+        <provider name="event-emitter" enabled="true">
+            <properties>
+               <property name="format" value="JSON"/>
+               <property name="targetUri" value="http://localhost:8888/event-receiver"/>
+               <property name="bufferCapacity" value="10"/>
+               <property name="keycloakId" value="1"/>
+               <property name="datacenterId" value="1"/>
+            </properties>   
+        </provider>
+    </spi>
+    <!--[...]-->
+</subsystem>
 ```
 
 Configuration parameters:
+* format: JSON or FLATBUFFER
+* targetUri: server endpoint where to send the serialized events
+* bufferCapacity: window size of events kept in memory if failure occurs
+* keycloakId: configuration parameter for snowflake unique ID generation, id of the keycloak instance
+* datacenterId: configuration parameter for snowflake unique ID generation, id of the datacenter
 
+All parameters are mandatory, if any of them is invalid or missing keycloak fails to start with a error message in the log about the cause.
 
-Note that if any parameter is invalid or missing, keycloak fails to start with a error message in the log about the cause.
-
-After file edition, restart keycloak
+After file edition, restart keycloak instance.
 
 Finally, to make the event emitter functional we hate to register it via the admin console.
 In Manage - Events, go to Config tab and add event-emitter among the Event listeners.
@@ -187,17 +198,14 @@ Logging level usage:
 * INFO : Informative message about current lifecycle of the module.
 * ERROR : Fatal error. Recoverable errors are logged at INFO level.
 
-
-### Buffer
-If the target server is not available, the Events and AdminEvents are stored in a Queue.
-This queue has a configurable limited capacity. When the queue is full, the oldest event is dropped to store  the new one.
-For each new events or adminEvents, the event-emitter will try to send all the events stored in the buffer.
-Events remains in the buffer until they are sucessfully received by the target or dropped to make space for new ones.
-
-
 ### Concurrency 
 Factory is application-scoped while provider is request-scoped (hence single-threaded).
 Different threads can use multiple providers concurrently.
 Provider doesn't need to be thread-safe but factory should be, that's why the Queue used to store the events is concurrency-safe.
 (Mailing list keycloak-dev, answer from Marek Posolda <mposolda@redhat.com>)
 
+### Buffer
+If the target server is not available, the Events and AdminEvents are stored in a Queue.
+This queue has a configurable limited capacity. When the queue is full, the oldest event is dropped to store  the new one.
+For each new events or adminEvents, the event-emitter will try to send all the events stored in the buffer.
+Events remains in the buffer until they are sucessfully received by the target or dropped to make space for new ones.

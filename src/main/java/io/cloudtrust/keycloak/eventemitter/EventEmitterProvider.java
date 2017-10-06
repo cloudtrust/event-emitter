@@ -1,7 +1,6 @@
-package io.cloudtrust.keycloak.module.eventemitter;
+package io.cloudtrust.keycloak.eventemitter;
 
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -14,7 +13,6 @@ import org.keycloak.events.admin.AdminEvent;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.LinkedBlockingQueue;
 
 
 /**

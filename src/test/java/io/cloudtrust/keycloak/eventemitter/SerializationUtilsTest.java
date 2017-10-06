@@ -1,4 +1,4 @@
-package io.cloudtrust.keycloak.module.eventemitter;
+package io.cloudtrust.keycloak.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Assert;

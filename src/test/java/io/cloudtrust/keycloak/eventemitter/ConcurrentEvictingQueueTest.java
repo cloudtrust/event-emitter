@@ -1,9 +1,7 @@
-package io.cloudtrust.keycloak.module.eventemitter;
+package io.cloudtrust.keycloak.eventemitter;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.NoSuchElementException;
 
 public class ConcurrentEvictingQueueTest {
 

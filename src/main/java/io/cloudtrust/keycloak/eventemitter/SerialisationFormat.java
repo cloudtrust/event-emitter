@@ -1,4 +1,4 @@
-package io.cloudtrust.keycloak.module.eventemitter;
+package io.cloudtrust.keycloak.eventemitter;
 
 /**
  * Supported serialisation format by the event-emitter.

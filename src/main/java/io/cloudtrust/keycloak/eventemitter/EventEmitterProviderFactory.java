@@ -1,7 +1,6 @@
-package io.cloudtrust.keycloak.module.eventemitter;
+package io.cloudtrust.keycloak.eventemitter;
 
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.jboss.logging.Logger;
@@ -16,7 +15,6 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Factory for EventEmitterProvider.

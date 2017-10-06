@@ -1,4 +1,4 @@
-package io.cloudtrust.keycloak.module.eventemitter;
+package io.cloudtrust.keycloak.eventemitter;
 
 /**
  * Exception for EventEmitter Provider
