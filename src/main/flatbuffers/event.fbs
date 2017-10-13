@@ -1,6 +1,6 @@
 // IDL file for events.
 
-namespace Flatbuffers.events;
+namespace flatbuffers.events;
 
 enum EventType:byte {
     LOGIN,
@@ -143,6 +143,7 @@ table AuthDetails {
 }
 
 table Event {
+    uid:long;
     time:long;
     type:EventType;
     realmId:string;
@@ -155,6 +156,7 @@ table Event {
 }
 
 table AdminEvent {
+    uid:long;
     time:long;
     realmId:string;
     authDetails:AuthDetails;
