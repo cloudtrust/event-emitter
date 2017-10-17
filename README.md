@@ -147,6 +147,8 @@ Configuration parameters:
 * keycloakId: configuration parameter for snowflake unique ID generation, id of the keycloak instance
 * datacenterId: configuration parameter for snowflake unique ID generation, id of the datacenter
 
+For FLATBUFFER format, the serialized event in wrapped in a JSON to transmit type information. The wrapper has two keys, 'type' which is 'Event' or 'AdminEvent' and 'obj' which is the flatbuffer in base64 format.
+
 All parameters are mandatory, if any of them is invalid or missing keycloak fails to start with a error message in the log about the cause.
 
 After file edition, restart keycloak instance.

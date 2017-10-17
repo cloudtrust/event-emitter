@@ -17,6 +17,9 @@ import java.util.Map;
 class SerialisationUtils {
     private static final int FLATBUFFER_INIT_SIZE = 1024;
 
+    static String toJson(Container container) throws JsonProcessingException {
+        return objToJson(container);
+    }
 
     static String toJson(IdentifiedAdminEvent adminEvent) throws JsonProcessingException {
         return objToJson(adminEvent);

@@ -1,5 +1,7 @@
 package io.cloudtrust.keycloak.eventemitter;
 
+import org.jboss.logging.Logger;
+
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -11,6 +13,8 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class ConcurrentEvictingQueue<T> extends LinkedBlockingQueue<T> {
+
+    private static final Logger logger = Logger.getLogger(EventEmitterProvider.class);
 
     public ConcurrentEvictingQueue(int capacity){
         super(capacity);
@@ -26,7 +30,6 @@ public class ConcurrentEvictingQueue<T> extends LinkedBlockingQueue<T> {
      */
     @Override
     public boolean offer(T t) {
-
         // Dummy implementation, multiple iterations may be needed to be able to add the element
         while(!super.offer(t)){
             super.poll();
