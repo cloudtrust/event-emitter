@@ -18,6 +18,7 @@ import org.keycloak.events.EventType;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.events.admin.AdminEvent;
@@ -31,7 +32,7 @@ public class EventEmitterProviderTest {
 
     @Test
     public void testFlatbufferFormatOutput() throws IOException, InterruptedException {
-        HttpFlatbufferReceiverHandler handler = new HttpFlatbufferReceiverHandler();
+        HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
         HttpServer server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
@@ -47,8 +48,13 @@ public class EventEmitterProviderTest {
         server.stop();
         server.shutdown(2, TimeUnit.SECONDS);
 
+        ObjectMapper mapper = new ObjectMapper();
+        Container container = mapper.readValue(handler.getResponse(), Container.class);
 
-        flatbuffers.events.Event receivedEvent = flatbuffers.events.Event.getRootAsEvent(handler.getResponse());
+        Assert.assertEquals("Event", container.getType());
+
+        byte[] b = Base64.getDecoder().decode(container.getObj());
+        flatbuffers.events.Event receivedEvent = flatbuffers.events.Event.getRootAsEvent(ByteBuffer.wrap(b));
         Assert.assertEquals(event.getTime(), receivedEvent.time());
         Assert.assertEquals(event.getType().ordinal(), receivedEvent.type());
         Assert.assertEquals(event.getClientId(), receivedEvent.clientId());
@@ -190,39 +196,6 @@ public class EventEmitterProviderTest {
         return server;
     }
 
-
-    class HttpFlatbufferReceiverHandler implements HttpRequestHandler  {
-        ByteBuffer byteBuffer;
-        int counter = 0;
-
-        HttpFlatbufferReceiverHandler() {
-            super();
-        }
-
-        @Override
-        public void handle(
-                final HttpRequest request,
-                final HttpResponse response,
-                final HttpContext context) throws HttpException, IOException {
-
-            System.out.println("Received");
-
-            if (request instanceof HttpEntityEnclosingRequest) {
-                HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-                byte[] entityContent = EntityUtils.toByteArray(entity);
-                byteBuffer = ByteBuffer.wrap(entityContent);
-            }
-        }
-
-        ByteBuffer getResponse(){
-            return byteBuffer;
-        }
-
-        int getCounter(){
-            return counter;
-        }
-
-    }
 
     class HttpJsonReceiverHandler implements HttpRequestHandler  {
         String jsonReceived;

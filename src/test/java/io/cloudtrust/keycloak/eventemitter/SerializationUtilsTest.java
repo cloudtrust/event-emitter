@@ -19,6 +19,20 @@ public class SerializationUtilsTest {
 
     private long UID = 123456789L;
 
+
+    @Test
+    public void testContainerToJson() {
+        Container c = new Container("Event", "obj");
+
+        try {
+            String jsonEvent = SerialisationUtils.toJson(c);
+            Assert.assertEquals("{\"type\":\"Event\",\"obj\":\"obj\"}", jsonEvent);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+    }
+
     @Test
     public void testEventToJson() {
         Event event = createEvent();

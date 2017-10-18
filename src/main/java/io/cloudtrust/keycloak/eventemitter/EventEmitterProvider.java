@@ -1,11 +1,16 @@
 package io.cloudtrust.keycloak.eventemitter;
 
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
+import org.apache.http.HttpClientConnection;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.protocol.HttpContext;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -13,6 +18,7 @@ import org.keycloak.events.admin.AdminEvent;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Base64;
 
 
 /**
@@ -22,11 +28,12 @@ import java.nio.ByteBuffer;
  */
 public class EventEmitterProvider implements EventListenerProvider{
 
-    private static final Logger logger = Logger.getLogger(EventEmitterProviderFactory.class);
+    private static final Logger logger = Logger.getLogger(EventEmitterProvider.class);
 
     private final static int HTTP_OK = 200;
 
-    private HttpClient httpClient;
+    private CloseableHttpClient httpClient;
+    private HttpClientContext httpContext;
     private IdGenerator idGenerator;
     private ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents;
     private ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents;
@@ -43,12 +50,13 @@ public class EventEmitterProvider implements EventListenerProvider{
      * @param pendingEvents to send due to failure during previous trial
      * @param pendingAdminEvents to send due to failure during previous trial
      */
-    EventEmitterProvider(HttpClient httpClient, IdGenerator idGenerator,
+    EventEmitterProvider(CloseableHttpClient httpClient, IdGenerator idGenerator,
                                 String targetUri, SerialisationFormat format,
                          ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents,
                          ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents){
         logger.debug("EventEmitterProvider contructor call");
         this.httpClient = httpClient;
+        this.httpContext = HttpClientContext.create();
         this.idGenerator = idGenerator;
         this.targetUri = targetUri;
         this.format = format;
@@ -106,6 +114,7 @@ public class EventEmitterProvider implements EventListenerProvider{
             } catch (EventEmitterException | IOException e) {
                 pendingEvents.offer(event);
                 logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
+                logger.debug("Failed to serialize or send event", e);
             }
         }
 
@@ -119,6 +128,7 @@ public class EventEmitterProvider implements EventListenerProvider{
             } catch (EventEmitterException | IOException e) {
                 pendingAdminEvents.offer(event);
                 logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
+                logger.debug("Failed to serialize or send adminEvent", e);
             }
         }
     }
@@ -131,10 +141,11 @@ public class EventEmitterProvider implements EventListenerProvider{
 
             try {
                 ByteBuffer buffer = SerialisationUtils.toFlat(event);
-                sendBytes(buffer);
+                sendBytes(buffer, Event.class.getSimpleName());
             } catch (EventEmitterException | IOException e) {
                 pendingEvents.offer(event);
                 logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
+                logger.debug("Failed to serialize or send event", e);
             }
         }
 
@@ -144,26 +155,24 @@ public class EventEmitterProvider implements EventListenerProvider{
 
             try {
                 ByteBuffer buffer = SerialisationUtils.toFlat(event);
-                sendBytes(buffer);
+                sendBytes(buffer, AdminEvent.class.getSimpleName());
             } catch (EventEmitterException | IOException e) {
                 pendingAdminEvents.offer(event);
                 logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
+                logger.debug("Failed to serialize or send adminEvent", e);
             }
         }
     }
 
 
-    private void sendBytes(ByteBuffer buffer) throws IOException, EventEmitterException {
+    private void sendBytes(ByteBuffer buffer, String type) throws IOException, EventEmitterException {
         byte[] b = new byte[buffer.remaining()];
         buffer.get(b);
 
-        ByteArrayEntity entityByteArray = new ByteArrayEntity(b);
-
-        HttpPost httpPost = new HttpPost(targetUri);
-        httpPost.setEntity(entityByteArray);
-        httpPost.setHeader("Content-type", "application/octet-stream");
-
-        send(httpPost);
+        String obj = Base64.getEncoder().encodeToString(b);
+        Container c = new Container(type, obj);
+        String json = SerialisationUtils.toJson(c);
+        sendJson(json);
     }
 
     private void sendJson(String json) throws IOException, EventEmitterException {
@@ -176,16 +185,19 @@ public class EventEmitterProvider implements EventListenerProvider{
     }
 
     private void send(HttpPost httpPost) throws EventEmitterException, IOException {
-        HttpResponse response = httpClient.execute(httpPost);
+        HttpContext c = HttpClientContext.create();
+        CloseableHttpResponse response = httpClient.execute(httpPost, httpContext);
 
-        int status = response.getStatusLine().getStatusCode();
+        try {
+            int status = response.getStatusLine().getStatusCode();
 
-        if (status != HTTP_OK) {
-            logger.errorv("Sending failure (Server response:%s)", status);
-            throw new EventEmitterException("Target server failure.");
+            if (status != HTTP_OK) {
+                logger.errorv("Sending failure (Server response:{0})", status);
+                throw new EventEmitterException("Target server failure.");
+            }
+        }finally{
+            response.close();
         }
     }
-
-
 
 }
