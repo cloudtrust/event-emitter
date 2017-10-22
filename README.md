@@ -4,6 +4,11 @@ Event emitter is a Keycloak module based on EventListener service provider inter
 During the lifecycle of Keycloak, Event and AdminEvent are created when specific actions are created.
 The aim of this module is to send those Events and AdminEvents to another server in a serialized format.
 
+## Compilation
+To produce the JAR of this module just use maven in a standard way:
+```Bash
+mvn package
+```
 
 ## Installation
 Event emitter module is expected to be installed as a module in a specific layer.
@@ -13,13 +18,13 @@ Event emitter module is expected to be installed as a module in a specific layer
 install -d -v -m755 /opt/keycloak/modules/system/layers/eventemitter -o keycloak -g keycloak
 
 #Setup the module directory
-install -d -v -m755 /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/main/ -o keycloak -g keycloak
+install -d -v -m755 /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/ -o keycloak -g keycloak
 
 #Install jar
-install -v -m0755 -o keycloak -g keycloak -D target/event-emitter-1.0.Final.jar /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/main/
+install -v -m0755 -o keycloak -g keycloak -D target/event-emitter-1.0.Final.jar /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/
 
 #Install module file
-install -v -m0755 -o keycloak -g keycloak -D src/main/resources/module.xml /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/main/
+install -v -m0755 -o keycloak -g keycloak -D src/main/resources/module.xml /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/
 
 ```
 
@@ -121,7 +126,7 @@ In __standalone.xml__, add the new module and configure it
     <web-context>auth</web-context>
     <providers>
         <!--[...]-->
-        <provider>module:com.quest.keycloak-wsfed</provider>
+        <provider>module:io.cloudtrust.keycloak.eventemitter</provider>
         <!--[...]-->
     </providers>
     <!--[...]-->
@@ -160,11 +165,6 @@ Note that configuration parameters can be seen in Server Info, tab Providers.
 
 
 ## Development tips
-### Compilation
-To produce the JAR of this module just use maven in a standard way:
-```Bash
-mvn package
-```
 
 ### Flatbuffers
 
