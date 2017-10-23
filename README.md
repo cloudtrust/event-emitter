@@ -15,23 +15,23 @@ Event emitter module is expected to be installed as a module in a specific layer
 
 ```Bash
 #Create layer in keycloak setup
-install -d -v -m755 /opt/keycloak/modules/system/layers/eventemitter -o keycloak -g keycloak
+# Note: in our case <PATH_TO_KEYCLOAK> = /opt/keycloak/keycloak
+install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter -o keycloak -g keycloak
 
 #Setup the module directory
-install -d -v -m755 /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/ -o keycloak -g keycloak
+install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/ -o keycloak -g keycloak
 
 #Install jar
-install -v -m0755 -o keycloak -g keycloak -D target/event-emitter-1.0.Final.jar /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/
+install -v -m0755 -o keycloak -g keycloak -D target/event-emitter-1.0.Final.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/
 
 #Install module file
-install -v -m0755 -o keycloak -g keycloak -D src/main/resources/module.xml /opt/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/
-
+install -v -m0755 -o keycloak -g keycloak -D src/main/resources/module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/
 ```
 
 module.xml
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.3" name="io.cloudtrust.keycloak.module.eventemitter">
+<module xmlns="urn:jboss:module:1.3" name="io.cloudtrust.keycloak.eventemitter">
     <resources>
         <resource-root path="event-emitter-1.0-Final.jar"/>
     </resources>
@@ -58,19 +58,19 @@ Dependencies to add:
 
 ```Bash
 #Create the module directory for collections4
-install -d -v -m755 /opt/keycloak/modules/system/layers/eventemitter/org/apache/commons/collections4/main -o keycloak -g keycloak
+install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main -o keycloak -g keycloak
 
 #Create the module directory for Guava
-install -d -v -m755 /opt/keycloak/modules/system/layers/eventemitter/com/google/guava/main -o keycloak -g keycloak
+install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/guava/main -o keycloak -g keycloak
 
 #Install jar
-install -v -m0755 -o keycloak -g keycloak -D commons-collections4-4.1.jar /opt/keycloak/modules/system/layers/eventemitter/org/apache/commons/collections4/main
-install -v -m0755 -o keycloak -g keycloak -D guava-23.1-jre.jar /opt/keycloak/modules/system/layers/eventemitter/com/google/guava/main
+install -v -m0755 -o keycloak -g keycloak -D commons-collections4-4.1.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main
+install -v -m0755 -o keycloak -g keycloak -D guava-23.1-jre.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/guava/main
 
 
 #Install module file
-install -v -m0755 -o keycloak -g keycloak -D module.xml /opt/keycloak/modules/system/layers/eventemitter/org/apache/commons/collections4/main
-install -v -m0755 -o keycloak -g keycloak -D module.xml /opt/keycloak/modules/system/layers/eventemitter/com/google/guava/main
+install -v -m0755 -o keycloak -g keycloak -D module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main
+install -v -m0755 -o keycloak -g keycloak -D module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/guava/main
 
 ```
 
