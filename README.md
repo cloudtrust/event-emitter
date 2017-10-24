@@ -134,7 +134,7 @@ In __standalone.xml__, add the new module and configure it
         <provider name="event-emitter" enabled="true">
             <properties>
                <property name="format" value="JSON"/>
-               <property name="targetUri" value="http://localhost:8888/event-receiver"/>
+               <property name="targetUri" value="http://localhost:8888/event/receiver"/>
                <property name="bufferCapacity" value="10"/>
                <property name="keycloakId" value="1"/>
                <property name="datacenterId" value="1"/>
