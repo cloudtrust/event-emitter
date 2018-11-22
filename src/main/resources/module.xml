@@ -11,7 +11,8 @@
         <module name="org.apache.httpcomponents"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
-        <module name="org.apache.commons.collections4"/>
         <module name="com.google.guava"/>
+        <module name="org.apache.commons.collections4"/>
+        <module name="com.google.flatbuffers.java"/>
     </dependencies>
 </module>

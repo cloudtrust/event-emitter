@@ -59,18 +59,26 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- 3rd Party libraries-->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-collections4</artifactId>
-            <version>4.1</version>
-        </dependency>
-
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>23.1-jre</version>
+            <version>${guava.version}</version>
+            <scope>provided</scope>
         </dependency>
+
+        <!-- 3rd Party libraries-->
+        <dependency>
+            <groupId>com.google.flatbuffers</groupId>
+            <artifactId>flatbuffers-java</artifactId>
+            <version>1.10.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.2</version>
+        </dependency>
+
 
         <!-- Test dependencies -->
         <dependency>
@@ -86,12 +94,13 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <!-- Versions -->
-        <keycloak.version>3.2.1.Final</keycloak.version>
-        <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.5</apache.httpcomponents.httpcore.version>
-        <jboss.logging.version>3.3.0.Final</jboss.logging.version>
-        <jackson.version>2.5.4</jackson.version>
+        <!-- Versions, aligned with keycloak 4.6.0.Final -->
+        <keycloak.version>4.6.0.Final</keycloak.version>
+        <guava.version>25.0-jre</guava.version>
+        <apache.httpcomponents.version>4.5.2</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.4.4</apache.httpcomponents.httpcore.version>
+        <jboss.logging.version>3.3.2.Final</jboss.logging.version>
+        <jackson.version>2.9.5</jackson.version>
         <junit.version>4.12</junit.version>
     </properties>
 

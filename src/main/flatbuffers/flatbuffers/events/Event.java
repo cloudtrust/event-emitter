@@ -19,16 +19,22 @@ public final class Event extends Table {
   public byte type() { int o = __offset(8); return o != 0 ? bb.get(o + bb_pos) : 0; }
   public String realmId() { int o = __offset(10); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer realmIdAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
+  public ByteBuffer realmIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 10, 1); }
   public String clientId() { int o = __offset(12); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer clientIdAsByteBuffer() { return __vector_as_bytebuffer(12, 1); }
+  public ByteBuffer clientIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 12, 1); }
   public String userId() { int o = __offset(14); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer userIdAsByteBuffer() { return __vector_as_bytebuffer(14, 1); }
+  public ByteBuffer userIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 14, 1); }
   public String sessionId() { int o = __offset(16); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer sessionIdAsByteBuffer() { return __vector_as_bytebuffer(16, 1); }
+  public ByteBuffer sessionIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 16, 1); }
   public String ipAddress() { int o = __offset(18); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer ipAddressAsByteBuffer() { return __vector_as_bytebuffer(18, 1); }
+  public ByteBuffer ipAddressInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 18, 1); }
   public String error() { int o = __offset(20); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer errorAsByteBuffer() { return __vector_as_bytebuffer(20, 1); }
+  public ByteBuffer errorInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 20, 1); }
   public Tuple details(int j) { return details(new Tuple(), j); }
   public Tuple details(Tuple obj, int j) { int o = __offset(22); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
   public int detailsLength() { int o = __offset(22); return o != 0 ? __vector_len(o) : 0; }
