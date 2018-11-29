@@ -1,0 +1,55 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>dist</id>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <baseDirectory>eventemitter</baseDirectory>
+    <files>
+        <!-- module.xml file for the module -->
+        <file>
+            <source>src/assembly/module.xml</source>
+            <outputDirectory>io/cloudtrust/keycloak/eventemitter/main</outputDirectory>
+            <destName>module.xml</destName>
+            <filtered>true</filtered>
+        </file>
+        <!-- module.xml file for the dependency flatbuffers-java -->
+        <file>
+            <source>src/assembly/module-flatbuffers-java.xml</source>
+            <outputDirectory>com/google/flatbuffers/java/main</outputDirectory>
+            <destName>module.xml</destName>
+            <filtered>true</filtered>
+        </file>
+        <!-- module.xml file for the dependency commons-collections4 -->
+        <file>
+            <source>src/assembly/module-commons-collections4.xml</source>
+            <outputDirectory>org/apache/commons/collections4/main</outputDirectory>
+            <destName>module.xml</destName>
+            <filtered>true</filtered>
+        </file>
+    </files>
+    <dependencySets>
+        <!-- jar file for the module -->
+        <dependencySet>
+            <outputDirectory>io/cloudtrust/keycloak/eventemitter/main</outputDirectory>
+            <includes>
+                <include>${project.groupId}:${project.artifactId}</include>
+            </includes>
+        </dependencySet>
+        <!-- jar file for the dependency flatbuffers-java -->
+        <dependencySet>
+            <outputDirectory>com/google/flatbuffers/java/main</outputDirectory>
+            <includes>
+                <include>com.google.flatbuffers:flatbuffers-java</include>
+            </includes>
+        </dependencySet>
+        <!-- jar file for the dependency commons-collections4 -->
+        <dependencySet>
+            <outputDirectory>org/apache/commons/collections4/main</outputDirectory>
+            <includes>
+                <include>org.apache.commons:commons-collections4</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>
