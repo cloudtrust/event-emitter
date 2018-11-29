@@ -6,6 +6,8 @@ The aim of this module is to send those Events and AdminEvents to another server
 
 ## Compilation
 
+Java 8 is required (Java 9+ is not supported yet).
+
 ### Build and Tests
 This module contains both unit and integration tests, and a parent inherited from Kecloak tests for simplifying the
 POM content.
