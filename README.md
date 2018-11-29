@@ -32,11 +32,10 @@ Event emitter module is expected to be installed as a module in a specific layer
 To install the release, use the TAR.GZ file produced by the build, and proceed as follows:
 
 ```Bash
-# Note: in our case <PATH_TO_KEYCLOAK> = /opt/keycloak/keycloak
-
-#Setup the module directory
+# Install the module binaries
 tar -zxf event-emitter-<version>.Final-dist.tar.gz --directory <PATH_TO_KEYCLOAK>/modules/system/layers
 
+# Set the appropriate permissions on the new files
 chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter
 ```
 
