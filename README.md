@@ -167,6 +167,20 @@ Note that configuration parameters can be seen in Server Info, tab Providers.
 
 ## Development tips
 
+### Build and Tests
+This module contains both unit and integration tests, and a parent inherited from Kecloak tests for simplifying the
+POM content.
+
+The integration tests rely on the arquillian-based Keycloak test framework. As Keycloak does not publish publicly
+the related jars for testing, one needs to manually build them so that they are available for maven for testing.
+
+For building these tests-jars, you need to:
+* clone the official Keycloak repository (https://github.com/keycloak/keycloak)
+* checkout the tag of the Keycloak version related to the versoin of the event-emitter module
+* execute `mvn clean install -dskipTests` in the Keycloak repository to build the jars and put them in your maven repository
+
+Once these test-jars are built, the event-emitter module can be built.
+
 ### Flatbuffers
 
 Flatbuffers schema is located under src/main/flatbuffers/flatbuffers/event.fbs.
