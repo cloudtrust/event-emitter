@@ -5,112 +5,41 @@ During the lifecycle of Keycloak, Event and AdminEvent are created when specific
 The aim of this module is to send those Events and AdminEvents to another server in a serialized format.
 
 ## Compilation
-To produce the JAR of this module just use maven in a standard way:
-```Bash
-mvn package
-```
+
+Java 8 is required (Java 9+ is not supported yet).
+
+### Build and Tests
+This module contains both unit and integration tests, and a parent inherited from Kecloak tests for simplifying the
+POM content.
+
+The integration tests rely on the arquillian-based Keycloak test framework. As Keycloak does not publish publicly
+the related jars for testing, one needs to manually build them so that they are available for maven for testing.
+
+For building these tests-jars, you need to:
+* clone the official Keycloak repository (https://github.com/keycloak/keycloak)
+* checkout the tag of the Keycloak version related to the versoin of the event-emitter module
+* execute `mvn clean install -dskipTests` in the Keycloak repository to build the jars and put them in your maven repository
+
+Once these test-jars are built, the event-emitter module can be built.
+
+### Binary
+The build produces the JAR of the module, along with a TAR.GZ file that contains the dependencies to be installed
+with the module.
 
 ## Installation
 Event emitter module is expected to be installed as a module in a specific layer.
 
-```Bash
-#Create layer in keycloak setup
-# Note: in our case <PATH_TO_KEYCLOAK> = /opt/keycloak/keycloak
-install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter -o keycloak -g keycloak
-
-#Setup the module directory
-install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/ -o keycloak -g keycloak
-
-#Install jar
-install -v -m0755 -o keycloak -g keycloak -D target/event-emitter-1.0.Final.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/
-
-#Install module file
-install -v -m0755 -o keycloak -g keycloak -D src/main/resources/module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/io/cloudtrust/keycloak/eventemitter/main/
-```
-
-module.xml
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.3" name="io.cloudtrust.keycloak.eventemitter">
-    <resources>
-        <resource-root path="event-emitter-1.0-Final.jar"/>
-    </resources>
-    <dependencies>
-        <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-server-spi"/>
-        <module name="org.keycloak.keycloak-server-spi-private"/>
-        <module name="org.jboss.logging"/>
-        <module name="org.apache.httpcomponents"/>
-        <module name="com.fasterxml.jackson.core.jackson-databind"/>
-        <module name="com.fasterxml.jackson.core.jackson-core"/>
-        <module name="com.google.guava"/>
-        <module name="org.apache.commons.collections4"/>
-        <module name="com.google.flatbuffers.java"/>
-    </dependencies>
-</module>
-```
-
-As far as possible, existing dependencies are used by this module but some of them are new ones that need to be added.
-Download JAR dependency of commons-collections4 and flatbuffers with the version specified in the pom.xml.
-
-Dependencies to add:
-* commons-collections4
-* flatbuffers
+To install the release, use the TAR.GZ file produced by the build, and proceed as follows:
 
 ```Bash
-#Create the module directory for collections4
-install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main -o keycloak -g keycloak
+# Install the module binaries
+tar -zxf event-emitter-<version>.Final-dist.tar.gz --directory <PATH_TO_KEYCLOAK>/modules/system/layers
 
-#Create the module directory for flatbuffers
-install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/flatbuffers/java/main -o keycloak -g keycloak
-
-#Install jar
-install -v -m0755 -o keycloak -g keycloak -D commons-collections4-4.2.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main
-install -v -m0755 -o keycloak -g keycloak -D flatbuffers-java-1.10.0.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/flatbuffers/java/main
-
-
-#Install module file
-install -v -m0755 -o keycloak -g keycloak -D module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main
-install -v -m0755 -o keycloak -g keycloak -D module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/flatbuffers/java/main
-
+# Set the appropriate permissions on the new files
+chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter
 ```
 
-module.xml for Collections4
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.3" name="org.apache.commons.collections4">
-    <properties>
-        <property name="jboss.api" value="private"/>
-    </properties>
-
-    <resources>
-        <resource-root path="commons-collections4-4.1.jar"/>
-    </resources>
-
-    <dependencies>
-    </dependencies>
-</module>
-```
-
-
-module.xml for flatbuffers
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.3" name="com.google.flatbuffers.java">
-    <properties>
-        <property name="jboss.api" value="private"/>
-    </properties>
-
-    <resources>
-        <resource-root path="flatbuffers-java-1.10.0.jar"/>
-    </resources>
-
-    <dependencies>
-    </dependencies>
-</module>
-```
-
-Enable the newly created layer, edit __layers.conf__:
+For enabling the newly created layer, edit __layers.conf__:
 ```Bash
 layers=keycloak,eventemitter
 ```
@@ -211,12 +140,15 @@ This queue has a configurable limited capacity. When the queue is full, the olde
 For each new events or adminEvents, the event-emitter will try to send all the events stored in the buffer.
 Events remains in the buffer until they are sucessfully received by the target or dropped to make space for new ones.
 
-
 ## Update process
 Each time a new Keycloak version is issued, the project must be updated:
 * update the POM with the version of the components that matches the Keycloak version
 * ensure that all libraries that are not included by default with Keycloak are added by hand
+  * adapt the `assembly.xml` file to package the jars that are not included
+  * add the appropriate `module-*.xml` files in the `src/assembly` folder
+  * adapt the properties in the `filter.properties`
 * check whether the code still compiles (run `mvn compile`)
 * ensure that the enum values in `event.fbs` are complete by comparing with the Keycloak source code
 * generate the flatbuffers stubs as described above (use a flatbuffers binary that matched the flatbuffers libraries in the POM)
-* run the tests and generate the JAR module: `mvn package`
+* run the tests and generate the JAR module and the TAR.GZ distribution package: `mvn package`
+  * ensure that the distribution package contains everything that is needed for the module to properly run
