@@ -9,7 +9,7 @@ The aim of this module is to send those Events and AdminEvents to another server
 Java 8 is required (Java 9+ is not supported yet).
 
 ### Build and Tests
-This module contains both unit and integration tests, and a parent inherited from Kecloak tests for simplifying the
+This module contains both unit and integration tests, and a parent inherited from Keycloak tests for simplifying the
 POM content.
 
 The integration tests rely on the arquillian-based Keycloak test framework. As Keycloak does not publish publicly
@@ -17,7 +17,7 @@ the related jars for testing, one needs to manually build them so that they are 
 
 For building these tests-jars, you need to:
 * clone the official Keycloak repository (https://github.com/keycloak/keycloak)
-* checkout the tag of the Keycloak version related to the versoin of the event-emitter module
+* checkout the tag of the Keycloak version related to the version of the event-emitter module
 * execute `mvn clean install -dskipTests` in the Keycloak repository to build the jars and put them in your maven repository
 
 Once these test-jars are built, the event-emitter module can be built.
@@ -138,7 +138,7 @@ Provider doesn't need to be thread-safe but factory should be, that's why the Qu
 If the target server is not available, the Events and AdminEvents are stored in a Queue.
 This queue has a configurable limited capacity. When the queue is full, the oldest event is dropped to store  the new one.
 For each new events or adminEvents, the event-emitter will try to send all the events stored in the buffer.
-Events remains in the buffer until they are sucessfully received by the target or dropped to make space for new ones.
+Events remains in the buffer until they are successfully received by the target or dropped to make space for new ones.
 
 ## Update process
 Each time a new Keycloak version is issued, the project must be updated:
