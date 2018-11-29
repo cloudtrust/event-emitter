@@ -16,12 +16,16 @@ public final class AuthDetails extends Table {
 
   public String realmId() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer realmIdAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer realmIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
   public String clientId() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer clientIdAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer clientIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
   public String userId() { int o = __offset(8); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer userIdAsByteBuffer() { return __vector_as_bytebuffer(8, 1); }
+  public ByteBuffer userIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 8, 1); }
   public String ipAddress() { int o = __offset(10); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer ipAddressAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
+  public ByteBuffer ipAddressInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 10, 1); }
 
   public static int createAuthDetails(FlatBufferBuilder builder,
       int realmIdOffset,

@@ -43,34 +43,35 @@ module.xml
         <module name="org.apache.httpcomponents"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
-        <module name="org.apache.commons.collections4"/>
         <module name="com.google.guava"/>
+        <module name="org.apache.commons.collections4"/>
+        <module name="com.google.flatbuffers.java"/>
     </dependencies>
 </module>
 ```
 
 As far as possible, existing dependencies are used by this module but some of them are new ones that need to be added.
-Download JAR dependency of commons-collections4 and Guava with the version specified in the pom.xml.
+Download JAR dependency of commons-collections4 and flatbuffers with the version specified in the pom.xml.
 
 Dependencies to add:
 * commons-collections4
-* guava
+* flatbuffers
 
 ```Bash
 #Create the module directory for collections4
 install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main -o keycloak -g keycloak
 
-#Create the module directory for Guava
-install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/guava/main -o keycloak -g keycloak
+#Create the module directory for flatbuffers
+install -d -v -m755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/flatbuffers/java/main -o keycloak -g keycloak
 
 #Install jar
-install -v -m0755 -o keycloak -g keycloak -D commons-collections4-4.1.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main
-install -v -m0755 -o keycloak -g keycloak -D guava-23.1-jre.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/guava/main
+install -v -m0755 -o keycloak -g keycloak -D commons-collections4-4.2.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main
+install -v -m0755 -o keycloak -g keycloak -D flatbuffers-java-1.10.0.jar <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/flatbuffers/java/main
 
 
 #Install module file
 install -v -m0755 -o keycloak -g keycloak -D module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/org/apache/commons/collections4/main
-install -v -m0755 -o keycloak -g keycloak -D module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/guava/main
+install -v -m0755 -o keycloak -g keycloak -D module.xml <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter/com/google/flatbuffers/java/main
 
 ```
 
@@ -92,16 +93,16 @@ module.xml for Collections4
 ```
 
 
-module.xml for Guava
+module.xml for flatbuffers
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.3" name="com.google.guava">
+<module xmlns="urn:jboss:module:1.3" name="com.google.flatbuffers.java">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
 
     <resources>
-        <resource-root path="guava-23.1-jre.jar"/>
+        <resource-root path="flatbuffers-java-1.10.0.jar"/>
     </resources>
 
     <dependencies>
@@ -186,8 +187,6 @@ $ ./flattests # this is quick, and should print "ALL TESTS PASSED"
 ```
 (Source: https://rwinslow.com/posts/how-to-install-flatbuffers/)
 
-To use flatbuffers, some classes are needed. No package are available to manage those dependencies, thus classes must be copy paste directly in the project.
-
 
 ### Idempotence
 A unique id is added to the serialized Events and AdminEvents in order to uniquely identify each of them and thus ensure the storage unicity on the target server.
@@ -211,3 +210,13 @@ If the target server is not available, the Events and AdminEvents are stored in 
 This queue has a configurable limited capacity. When the queue is full, the oldest event is dropped to store  the new one.
 For each new events or adminEvents, the event-emitter will try to send all the events stored in the buffer.
 Events remains in the buffer until they are sucessfully received by the target or dropped to make space for new ones.
+
+
+## Update process
+Each time a new Keycloak version is issued, the project must be updated:
+* update the POM with the version of the components that matches the Keycloak version
+* ensure that all libraries that are not included by default with Keycloak are added by hand
+* check whether the code still compiles (run `mvn compile`)
+* ensure that the enum values in `event.fbs` are complete by comparing with the Keycloak source code
+* generate the flatbuffers stubs as described above (use a flatbuffers binary that matched the flatbuffers libraries in the POM)
+* run the tests and generate the JAR module: `mvn package`
