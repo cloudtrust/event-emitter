@@ -29,19 +29,20 @@ with the module.
 ## Installation
 Event emitter module is expected to be installed as a module in a specific layer.
 
-To install the release, use the TAR.GZ file produced by the build, and proceed as follows:
+To install the release, use the TAR.GZ file produced by the build; either run the `install.sh` script
+or manually proceed as follows:
 
 ```Bash
 # Install the module binaries
 tar -zxf event-emitter-<version>.Final-dist.tar.gz --directory <PATH_TO_KEYCLOAK>/modules/system/layers
 
 # Set the appropriate permissions on the new files
-chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/eventemitter
+chmod -R 644 <PATH_TO_KEYCLOAK>/modules/system/layers/event-emitter
 ```
 
 For enabling the newly created layer, edit __layers.conf__:
 ```Bash
-layers=keycloak,eventemitter
+layers=keycloak,event-emitter
 ```
 
 
