@@ -37,7 +37,7 @@ or manually proceed as follows:
 tar -zxf event-emitter-<version>.Final-dist.tar.gz --directory <PATH_TO_KEYCLOAK>/modules/system/layers
 
 # Set the appropriate permissions on the new files
-chmod -R 644 <PATH_TO_KEYCLOAK>/modules/system/layers/event-emitter
+chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/event-emitter
 ```
 
 For enabling the newly created layer, edit __layers.conf__:

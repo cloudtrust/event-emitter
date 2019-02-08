@@ -16,10 +16,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.events.Event;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.FluentTestsHelper;
 import org.keycloak.test.TestsHelper;
 
 import java.io.File;
@@ -36,15 +34,10 @@ public class MessageGenerationItTest {
     private static final String MODULE_NAME_WAR = "event-emitter.war";
     private static final String CLIENT = "admin-cli";
     private static final String TEST_USER = "user-test-event-emitter";
-    private static final String TEST_REALM_NAME = "test-event-emitter";
-
-    private static FluentTestsHelper testHelper;
 
     private static HttpServer restTestServer;
 
     private static int nbLoginEvents = 0;
-    private static int nbLogoutEvents = 0;
-    private static int nbLoginErrorEvents = 0;
 
     @Rule
     public ExpectedException expectedEx = ExpectedException.none();
