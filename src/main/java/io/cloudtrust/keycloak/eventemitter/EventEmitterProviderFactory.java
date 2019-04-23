@@ -109,7 +109,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
             throw e;
         }
 
-        if(bufferCapacity == null){
+        if(keycloakId == null){
             logger.error("KeycloakId configuration is missing");
             throw new IllegalArgumentException("KeycloakId configuration is missing");
         }
@@ -122,7 +122,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
             throw e;
         }
 
-        if(bufferCapacity == null){
+        if(datacenterId == null){
             logger.error("DatacenterId configuration is missing");
             throw new IllegalArgumentException("DatacenterId configuration is missing");
         }
