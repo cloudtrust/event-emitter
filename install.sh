@@ -70,7 +70,7 @@ init()
         CONF_FILE=$argv__KEYCLOAK/standalone/configuration/standalone.xml
     fi
     echo $CONF_FILE
-    MODULE=${PWD##*/}
+    MODULE="event-emitter"
 }
 
 init_exceptions()
