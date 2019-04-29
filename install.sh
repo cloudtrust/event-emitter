@@ -9,7 +9,7 @@ set -eE
 
 usage ()
 {
-    echo "usage: $0 keycloak_path [-c]"
+    echo "usage: $0 keycloak_path [-c] [-t host] [-u]"
 }
 
 
@@ -19,9 +19,10 @@ init()
     [[ $(xmlstarlet --version) ]] || { echo >&2 "Requires xmlstarlet"; exit 1; }
 
     #optional args
-    argv__CLUSTER=0;
+    argv__CLUSTER=0
+    argv__TARGET="http://localhost:8888/event/receiver"
     argv__UNINSTALL=0
-    getopt_results=$(getopt -s bash -o cu --long cluster,uninstall -- "$@")
+    getopt_results=$(getopt -s bash -o ct:u --long cluster,target:,uninstall -- "$@")
 
     if test $? != 0
     then
@@ -42,6 +43,11 @@ init()
                 argv__CLUSTER=1
                 echo "--cluster set. Will edit cluster config"
                 shift
+                ;;
+            -t|--target)
+                argv__TARGET="$2"
+                echo "--target set to \"$argv__TARGET\". Will edit the emitter target URI"
+                shift 2
                 ;;
             --)
                 shift
@@ -145,7 +151,7 @@ Main__main()
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='format']" -t attr -n value -v 'FLATBUFFER' $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties" -t elem -n property $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[not(@*)]" -t attr -n name -v 'targetUri' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='targetUri']" -t attr -n value -v 'http://localhost:8888/event/receiver' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='targetUri']" -t attr -n value -v "$argv__TARGET" $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties" -t elem -n property $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[not(@*)]" -t attr -n name -v 'bufferCapacity' $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='bufferCapacity']" -t attr -n value -v '10' $CONF_FILE
