@@ -1,6 +1,7 @@
 package io.cloudtrust.keycloak.eventemitter;
 
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
+import org.apache.http.Header;
 import org.apache.http.HttpClientConnection;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -30,6 +31,9 @@ public class EventEmitterProvider implements EventListenerProvider{
 
     private static final Logger logger = Logger.getLogger(EventEmitterProvider.class);
 
+    private static final String BASIC = "Basic";
+    private static final String AUTHORIZATION = "Authorization";
+
     private final static int HTTP_OK = 200;
 
     private CloseableHttpClient httpClient;
@@ -38,6 +42,8 @@ public class EventEmitterProvider implements EventListenerProvider{
     private ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents;
     private ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents;
     private String targetUri;
+    private String username;
+    private String secretToken;
     private SerialisationFormat format;
 
     /**
@@ -53,12 +59,15 @@ public class EventEmitterProvider implements EventListenerProvider{
     EventEmitterProvider(CloseableHttpClient httpClient, IdGenerator idGenerator,
                                 String targetUri, SerialisationFormat format,
                          ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents,
-                         ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents){
+                         ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents, String username,
+                         String secretToken){
         logger.debug("EventEmitterProvider contructor call");
         this.httpClient = httpClient;
         this.httpContext = HttpClientContext.create();
         this.idGenerator = idGenerator;
         this.targetUri = targetUri;
+        this.username = username;
+        this.secretToken = secretToken;
         this.format = format;
         this.pendingEvents = pendingEvents;
         this.pendingAdminEvents = pendingAdminEvents;
@@ -180,6 +189,10 @@ public class EventEmitterProvider implements EventListenerProvider{
         StringEntity stringEntity = new StringEntity(json);
         httpPost.setEntity(stringEntity);
         httpPost.setHeader("Content-type", "application/json");
+
+        String token = username + ":" + secretToken;
+        String b64Token = Base64.getEncoder().encodeToString(token.getBytes());
+        httpPost.setHeader(AUTHORIZATION, BASIC + " " + b64Token);
 
         send(httpPost);
     }
