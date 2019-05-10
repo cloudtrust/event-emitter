@@ -31,6 +31,9 @@ public class EventEmitterProvider implements EventListenerProvider{
 
     private static final Logger logger = Logger.getLogger(EventEmitterProvider.class);
 
+    public static final String KEYCLOAK_BRIDGE_SECRET_TOKEN = "CT_KEYCLOAK_BRIDGE_SECRET_TOKEN";
+    public static final String HOSTNAME = "HOSTNAME";
+
     private static final String BASIC = "Basic";
     private static final String AUTHORIZATION = "Authorization";
 
@@ -59,18 +62,29 @@ public class EventEmitterProvider implements EventListenerProvider{
     EventEmitterProvider(CloseableHttpClient httpClient, IdGenerator idGenerator,
                                 String targetUri, SerialisationFormat format,
                          ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents,
-                         ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents, String username,
-                         String secretToken){
+                         ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents){
         logger.debug("EventEmitterProvider contructor call");
         this.httpClient = httpClient;
         this.httpContext = HttpClientContext.create();
         this.idGenerator = idGenerator;
         this.targetUri = targetUri;
-        this.username = username;
-        this.secretToken = secretToken;
         this.format = format;
         this.pendingEvents = pendingEvents;
         this.pendingAdminEvents = pendingAdminEvents;
+
+        // Secret token
+        secretToken = System.getenv(KEYCLOAK_BRIDGE_SECRET_TOKEN);
+        if (secretToken == null) {
+            logger.error("Cannot find the environment variable '" + KEYCLOAK_BRIDGE_SECRET_TOKEN + "'");
+            throw new IllegalStateException("Cannot find the environment variable '" + KEYCLOAK_BRIDGE_SECRET_TOKEN + "'");
+        }
+
+        // Hostname
+        username = System.getenv(HOSTNAME);
+        if (username == null) {
+            logger.error("Cannot find the environment variable '" + HOSTNAME + "'");
+            throw new IllegalStateException("Cannot find the environment variable '" + HOSTNAME + "'");
+        }
     }
 
     public void onEvent(Event event) {

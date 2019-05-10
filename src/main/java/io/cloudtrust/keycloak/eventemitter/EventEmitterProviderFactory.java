@@ -41,16 +41,12 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     private static final String SNOWFLAKE_KEYCLOAKID_CONFIG_KEY = "keycloakId";
     private static final String SNOWFLAKE_DATACENTERID_CONFIG_KEY = "datacenterId";
 
-    private static final String KEYCLOAK_BRIDGE_SECRET_TOKEN = "CT_KEYCLOAK_BRIDGE_SECRET_TOKEN";
-    private static final String HOSTNAME = "hostname";
-
     private String targetUri;
     private SerialisationFormat format;
     private Integer bufferCapacity;
     private Integer keycloakId;
     private Integer datacenterId;
-    private String secretToken;
-    private String host;
+
 
     private CloseableHttpClient httpClient;
     private IdGenerator idGenerator;
@@ -63,7 +59,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
         logger.debug("EventEmitterProviderFactory creation");
 
         return new EventEmitterProvider(httpClient, idGenerator, targetUri,
-                format, pendingEventsToSend, pendingAdminEventsToSend, host, secretToken);
+                format, pendingEventsToSend, pendingAdminEventsToSend);
     }
 
     public void init(Config.Scope config) {
@@ -132,17 +128,6 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
             throw new IllegalArgumentException("DatacenterId configuration is missing");
         }
 
-        // Secret token
-        secretToken = System.getenv(KEYCLOAK_BRIDGE_SECRET_TOKEN);
-        if (secretToken == null) {
-            throw new IllegalStateException("Cannot find the environment variable '" + KEYCLOAK_BRIDGE_SECRET_TOKEN + "'");
-        }
-
-        // Hostname
-        host = System.getenv(HOSTNAME);
-        if (host == null) {
-            throw new IllegalStateException("Cannot find the environment variable '" + HOSTNAME + "'");
-        }
 
         // Initialisation
         httpClient = HttpClients.createDefault();

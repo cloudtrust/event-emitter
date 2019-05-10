@@ -93,6 +93,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- lib for tests with environment variables -->
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>1.19.0</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- All following dependencies are to run a local keycloak in arquillian for tests
     Many of these dependencies can be omitted (for example email server or database connectors),
     but it is recommended to include them all, since their scope is "test" anyway.
