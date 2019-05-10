@@ -40,13 +40,16 @@ public class EventEmitterProviderTest {
     private static final String TARGET = "http://localhost:"+LISTEN_PORT+"/test";
     private static int BUFFER_CAPACITY = 3;
 
+    private static final String username = "toto";
+    private static final String password = "passwordverylongandhardtoguess";
+
     @ClassRule
     public static final EnvironmentVariables envVariables = new EnvironmentVariables();
 
     @BeforeClass
     public static void intEnv() throws IOException {
-        envVariables.set(EventEmitterProvider.KEYCLOAK_BRIDGE_SECRET_TOKEN, "passwordverylongandhardtoguess");
-        envVariables.set(EventEmitterProvider.HOSTNAME, "toto");
+        envVariables.set(EventEmitterProvider.KEYCLOAK_BRIDGE_SECRET_TOKEN, password);
+        envVariables.set(EventEmitterProvider.HOSTNAME, username);
     }
 
     protected static Undertow startHttpServer(HttpHandler handler) {

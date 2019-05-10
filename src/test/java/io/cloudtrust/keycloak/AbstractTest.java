@@ -12,6 +12,7 @@ import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
@@ -22,12 +23,15 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 public abstract class AbstractTest {
     protected static Undertow server;
     protected static final int LISTEN_PORT = 8888;
     private static final String MODULE_NAME_WAR = "event-emitter.war";
 
+    private static final String username = "toto";
+    private static final String password = "passwordverylongandhardtoguess";
 
     @ClassRule
     public static final EnvironmentVariables envVariables = new EnvironmentVariables();
@@ -42,14 +46,24 @@ public abstract class AbstractTest {
 
     @BeforeClass
     public static void intEnv() throws IOException {
-        envVariables.set(EventEmitterProvider.KEYCLOAK_BRIDGE_SECRET_TOKEN, "passwordverylongandhardtoguess");
-        envVariables.set(EventEmitterProvider.HOSTNAME, "toto");
+        envVariables.set(EventEmitterProvider.KEYCLOAK_BRIDGE_SECRET_TOKEN, password);
+        envVariables.set(EventEmitterProvider.HOSTNAME, username);
     }
 
     protected static HttpHandler handler = new HttpHandler() {
         private String jsonReceived;
         @Override
         public void handleRequest(HttpServerExchange exchange) throws Exception {
+            String basicToken = exchange.getRequestHeaders().get("Authorization").element();
+            String[] subParts = basicToken.split("Basic ");
+            Assert.assertEquals(2, subParts.length);
+            String decodedToken = new String(Base64.getDecoder().decode(subParts[1]));
+
+            if (!(username+":"+password).equals(decodedToken)) {
+                exchange.setStatusCode(StatusCodes.FORBIDDEN);
+                return;
+            }
+
             exchange.setStatusCode(StatusCodes.OK);
             ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
             jsonReceived = IOUtils.toString(cis, StandardCharsets.UTF_8);
