@@ -1,6 +1,7 @@
 package io.cloudtrust.keycloak.eventemitter;
 
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
+import org.apache.http.Header;
 import org.apache.http.HttpClientConnection;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -30,6 +31,12 @@ public class EventEmitterProvider implements EventListenerProvider{
 
     private static final Logger logger = Logger.getLogger(EventEmitterProvider.class);
 
+    public static final String KEYCLOAK_BRIDGE_SECRET_TOKEN = "CT_KEYCLOAK_BRIDGE_SECRET_TOKEN";
+    public static final String HOSTNAME = "HOSTNAME";
+
+    private static final String BASIC = "Basic";
+    private static final String AUTHORIZATION = "Authorization";
+
     private final static int HTTP_OK = 200;
 
     private CloseableHttpClient httpClient;
@@ -38,6 +45,8 @@ public class EventEmitterProvider implements EventListenerProvider{
     private ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents;
     private ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents;
     private String targetUri;
+    private String username;
+    private String secretToken;
     private SerialisationFormat format;
 
     /**
@@ -62,6 +71,20 @@ public class EventEmitterProvider implements EventListenerProvider{
         this.format = format;
         this.pendingEvents = pendingEvents;
         this.pendingAdminEvents = pendingAdminEvents;
+
+        // Secret token
+        secretToken = System.getenv(KEYCLOAK_BRIDGE_SECRET_TOKEN);
+        if (secretToken == null) {
+            logger.error("Cannot find the environment variable '" + KEYCLOAK_BRIDGE_SECRET_TOKEN + "'");
+            throw new IllegalStateException("Cannot find the environment variable '" + KEYCLOAK_BRIDGE_SECRET_TOKEN + "'");
+        }
+
+        // Hostname
+        username = System.getenv(HOSTNAME);
+        if (username == null) {
+            logger.error("Cannot find the environment variable '" + HOSTNAME + "'");
+            throw new IllegalStateException("Cannot find the environment variable '" + HOSTNAME + "'");
+        }
     }
 
     public void onEvent(Event event) {
@@ -180,6 +203,10 @@ public class EventEmitterProvider implements EventListenerProvider{
         StringEntity stringEntity = new StringEntity(json);
         httpPost.setEntity(stringEntity);
         httpPost.setHeader("Content-type", "application/json");
+
+        String token = username + ":" + secretToken;
+        String b64Token = Base64.getEncoder().encodeToString(token.getBytes());
+        httpPost.setHeader(AUTHORIZATION, BASIC + " " + b64Token);
 
         send(httpPost);
     }

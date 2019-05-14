@@ -2,7 +2,13 @@ package io.cloudtrust.keycloak.eventemitter;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.cloudtrust.keycloak.AbstractTest;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
+import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.StatusCodes;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.*;
 import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
@@ -12,16 +18,21 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.events.admin.AdminEvent;
+import org.xnio.streams.ChannelInputStream;
 
 public class EventEmitterProviderTest {
 
@@ -29,11 +40,31 @@ public class EventEmitterProviderTest {
     private static final String TARGET = "http://localhost:"+LISTEN_PORT+"/test";
     private static int BUFFER_CAPACITY = 3;
 
+    private static final String username = "toto";
+    private static final String password = "passwordverylongandhardtoguess";
+
+    @ClassRule
+    public static final EnvironmentVariables envVariables = new EnvironmentVariables();
+
+    @BeforeClass
+    public static void intEnv() throws IOException {
+        envVariables.set(EventEmitterProvider.KEYCLOAK_BRIDGE_SECRET_TOKEN, password);
+        envVariables.set(EventEmitterProvider.HOSTNAME, username);
+    }
+
+    protected static Undertow startHttpServer(HttpHandler handler) {
+        Undertow server = Undertow.builder()
+                .addHttpListener(LISTEN_PORT, "0.0.0.0", handler)
+                .build();
+        server.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> server.stop()));
+        return server;
+    }
 
     @Test
     public void testFlatbufferFormatOutput() throws IOException, InterruptedException {
         HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
-        HttpServer server = startHttpServer(handler);
+        Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
         ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
@@ -46,7 +77,6 @@ public class EventEmitterProviderTest {
 
         httpClient.close();
         server.stop();
-        server.shutdown(2, TimeUnit.SECONDS);
 
         ObjectMapper mapper = new ObjectMapper();
         Container container = mapper.readValue(handler.getResponse(), Container.class);
@@ -64,7 +94,7 @@ public class EventEmitterProviderTest {
     @Test
     public void testJsonFormatOutput() throws IOException, InterruptedException {
         HttpJsonReceiverHandler handler =  new HttpJsonReceiverHandler();
-        HttpServer server = startHttpServer(handler);
+        Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
         ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
@@ -77,7 +107,6 @@ public class EventEmitterProviderTest {
 
         httpClient.close();
         server.stop();
-        server.shutdown(2, TimeUnit.SECONDS);
 
         ObjectMapper mapper = new ObjectMapper();
         IdentifiedEvent receivedIdentifiedEvent = mapper.readValue(handler.getResponse(), IdentifiedEvent.class);
@@ -115,7 +144,7 @@ public class EventEmitterProviderTest {
     @Test
     public void testServerError() throws IOException, InterruptedException {
         HttpErrorHandler handler =  new HttpErrorHandler();
-        HttpServer server = startHttpServer(handler);
+        Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
         ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
@@ -137,7 +166,6 @@ public class EventEmitterProviderTest {
         Assert.assertEquals(2, pendingEvents.size());
         httpClient.close();
         server.stop();
-        server.shutdown(2, TimeUnit.SECONDS);
     }
 
 
@@ -164,40 +192,20 @@ public class EventEmitterProviderTest {
 
         Assert.assertEquals(2, pendingEvents.size());
 
-        HttpServer server = startHttpServer(handler);
+        Undertow server = startHttpServer(handler);
 
         Event event3 = createEvent();
         eventEmitterProvider.onEvent(event3);
 
         httpClient.close();
         server.stop();
-        server.shutdown(2, TimeUnit.SECONDS);
 
         Assert.assertEquals(0, pendingEvents.size());
         Assert.assertEquals(3, handler.getCounter());
     }
 
-    private HttpServer startHttpServer(HttpRequestHandler handler) throws IOException {
-        HttpServer server = ServerBootstrap.bootstrap()
-                .setListenerPort(LISTEN_PORT)
-                .setServerInfo("Test/1.1")
-                .registerHandler("*", handler)
-                .create();
 
-        server.start();
-
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                server.shutdown(5, TimeUnit.SECONDS);
-            }
-        });
-
-        return server;
-    }
-
-
-    class HttpJsonReceiverHandler implements HttpRequestHandler  {
+    class HttpJsonReceiverHandler implements HttpHandler {
         String jsonReceived;
         int counter = 0;
 
@@ -206,18 +214,11 @@ public class EventEmitterProviderTest {
         }
 
         @Override
-        public void handle(
-                final HttpRequest request,
-                final HttpResponse response,
-                final HttpContext context) throws HttpException, IOException {
-
-            System.out.println("Received");
-
-            if (request instanceof HttpEntityEnclosingRequest) {
-                HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-                jsonReceived = EntityUtils.toString(entity, "UTF-8");
-                counter++;
-            }
+        public void handleRequest(HttpServerExchange exchange) throws Exception {
+            exchange.setStatusCode(StatusCodes.OK);
+            ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
+            jsonReceived = IOUtils.toString(cis, StandardCharsets.UTF_8);
+            counter++;
         }
 
         String getResponse(){
@@ -229,19 +230,15 @@ public class EventEmitterProviderTest {
         }
     }
 
-    class HttpErrorHandler implements HttpRequestHandler  {
+    class HttpErrorHandler implements HttpHandler {
 
         HttpErrorHandler() {
             super();
         }
 
         @Override
-        public void handle(
-                final HttpRequest request,
-                final HttpResponse response,
-                final HttpContext context) throws HttpException, IOException {
-
-            response.setStatusCode(300);
+        public void handleRequest(HttpServerExchange exchange) throws Exception {
+            exchange.setStatusCode(StatusCodes.MULTIPLE_CHOICES);
         }
 
     }

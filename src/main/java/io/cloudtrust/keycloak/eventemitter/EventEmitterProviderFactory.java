@@ -47,6 +47,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     private Integer keycloakId;
     private Integer datacenterId;
 
+
     private CloseableHttpClient httpClient;
     private IdGenerator idGenerator;
     private ConcurrentEvictingQueue<IdentifiedEvent> pendingEventsToSend;
@@ -126,6 +127,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
             logger.error("DatacenterId configuration is missing");
             throw new IllegalArgumentException("DatacenterId configuration is missing");
         }
+
 
         // Initialisation
         httpClient = HttpClients.createDefault();
