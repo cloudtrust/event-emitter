@@ -9,7 +9,6 @@
 
     <packaging>jar</packaging>
 
-    <name>Event Emiter Keycloak Module</name>
     <description>Keycloak module to transmit events to keycloak-bridge</description>
 
     <parent>
@@ -468,11 +467,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <filters>
-                        <filter>src/assembly/filter.properties</filter>
-                    </filters>
                     <descriptors>
-                        <descriptor>src/assembly/assembly.xml</descriptor>
+                        <descriptor>assembly.xml</descriptor>
                     </descriptors>
                 </configuration>
             </plugin>
