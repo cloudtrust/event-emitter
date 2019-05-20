@@ -46,7 +46,6 @@ layers=keycloak,event-emitter
 ```
 
 
-
 ## Enable & Configure
 
 In __standalone.xml__, add the new module and configure it
@@ -93,6 +92,9 @@ Finally, to make the event emitter functional we hate to register it via the adm
 In Manage - Events, go to Config tab and add event-emitter among the Event listeners.
 
 Note that configuration parameters can be seen in Server Info, tab Providers.
+
+
+This module will authenticate itself to the server endpoint with Basic authentication. The password value to use is set thanks to the 'CT_KEYCLOAK_BRIDGE_SECRET_TOKEN' environment variable.
 
 
 ## Development tips
