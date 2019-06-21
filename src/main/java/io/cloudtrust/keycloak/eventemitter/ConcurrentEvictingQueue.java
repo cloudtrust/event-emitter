@@ -1,7 +1,5 @@
 package io.cloudtrust.keycloak.eventemitter;
 
-import org.jboss.logging.Logger;
-
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -13,8 +11,7 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class ConcurrentEvictingQueue<T> extends LinkedBlockingQueue<T> {
-
-    private static final Logger logger = Logger.getLogger(EventEmitterProvider.class);
+    private static final long serialVersionUID = 2926742518543453893L;
 
     public ConcurrentEvictingQueue(int capacity){
         super(capacity);

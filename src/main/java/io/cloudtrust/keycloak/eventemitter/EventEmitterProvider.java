@@ -1,17 +1,11 @@
 package io.cloudtrust.keycloak.eventemitter;
 
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
-import org.apache.http.Header;
-import org.apache.http.HttpClientConnection;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.protocol.HttpContext;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -37,7 +31,7 @@ public class EventEmitterProvider implements EventListenerProvider{
     private static final String BASIC = "Basic";
     private static final String AUTHORIZATION = "Authorization";
 
-    private final static int HTTP_OK = 200;
+    private static final int HTTP_OK = 200;
 
     private CloseableHttpClient httpClient;
     private HttpClientContext httpContext;
@@ -212,18 +206,13 @@ public class EventEmitterProvider implements EventListenerProvider{
     }
 
     private void send(HttpPost httpPost) throws EventEmitterException, IOException {
-        HttpContext c = HttpClientContext.create();
-        CloseableHttpResponse response = httpClient.execute(httpPost, httpContext);
-
-        try {
+        try (CloseableHttpResponse response = httpClient.execute(httpPost, httpContext)) {
             int status = response.getStatusLine().getStatusCode();
 
             if (status != HTTP_OK) {
                 logger.errorv("Sending failure (Server response:{0})", status);
                 throw new EventEmitterException("Target server failure.");
             }
-        }finally{
-            response.close();
         }
     }
 

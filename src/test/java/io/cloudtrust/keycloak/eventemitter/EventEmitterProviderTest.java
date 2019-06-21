@@ -2,21 +2,14 @@ package io.cloudtrust.keycloak.eventemitter;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.cloudtrust.keycloak.AbstractTest;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.StatusCodes;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.*;
-import org.apache.http.impl.bootstrap.HttpServer;
-import org.apache.http.impl.bootstrap.ServerBootstrap;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpRequestHandler;
-import org.apache.http.util.EntityUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -29,9 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.concurrent.TimeUnit;
 
-import org.keycloak.events.admin.AdminEvent;
 import org.xnio.streams.ChannelInputStream;
 
 public class EventEmitterProviderTest {
@@ -243,20 +234,10 @@ public class EventEmitterProviderTest {
 
     }
 
-
     private Event createEvent(){
         Event event = new Event();
         event.setTime(120001);
         event.setType(EventType.CLIENT_LOGIN);
         return event;
     }
-
-    private AdminEvent createAdminEvent(){
-        AdminEvent adminEvent = new AdminEvent();
-        adminEvent.setTime(120000);
-        return adminEvent;
-    }
-
-
-
 }
