@@ -1,7 +1,5 @@
 package io.cloudtrust.keycloak;
 
-import com.google.gson.Gson;
-import com.sun.net.httpserver.HttpExchange;
 import io.cloudtrust.keycloak.eventemitter.EventEmitterProvider;
 import io.cloudtrust.keycloak.eventemitter.EventEmitterProviderFactory;
 import io.undertow.Undertow;
@@ -16,18 +14,19 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.keycloak.events.Event;
+import org.keycloak.test.FluentTestsHelper;
 import org.xnio.streams.ChannelInputStream;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.util.Base64;
 
 public abstract class AbstractTest {
     protected static Undertow server;
     protected static final int LISTEN_PORT = 8888;
+    protected static final String KEYCLOAK_URL = getKeycloakUrl();
     private static final String MODULE_NAME_WAR = "event-emitter.war";
 
     private static final String username = "toto";
@@ -36,6 +35,16 @@ public abstract class AbstractTest {
     @ClassRule
     public static final EnvironmentVariables envVariables = new EnvironmentVariables();
 
+    private static String getKeycloakUrl() {
+        String url = FluentTestsHelper.DEFAULT_KEYCLOAK_URL;
+        try {
+            URI uri = new URI(FluentTestsHelper.DEFAULT_KEYCLOAK_URL);
+            url = url.replace(String.valueOf(uri.getPort()), System.getProperty("auth.server.http.port", "8080"));
+        } catch (Exception e) {
+            // Ignore
+        }
+        return url;
+    }
 
     @BeforeClass
     public static void initServer() throws IOException {

@@ -15,23 +15,12 @@ import java.util.Map;
  * In order to allow idempotence, a unique ID is added to the entity.
  */
 class SerialisationUtils {
+    private static final ThreadLocal<ObjectMapper> objectMapperProvider = ThreadLocal.withInitial(ObjectMapper::new);
+
     private static final int FLATBUFFER_INIT_SIZE = 1024;
 
-    static String toJson(Container container) throws JsonProcessingException {
-        return objToJson(container);
-    }
-
-    static String toJson(IdentifiedAdminEvent adminEvent) throws JsonProcessingException {
-        return objToJson(adminEvent);
-    }
-
-    static String toJson(IdentifiedEvent event) throws JsonProcessingException {
-        return objToJson(event);
-    }
-
-    private static String objToJson(Object obj) throws JsonProcessingException {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(obj);
+    static String toJson(Object obj) throws JsonProcessingException {
+        return objectMapperProvider.get().writeValueAsString(obj);
     }
 
     static ByteBuffer toFlat(IdentifiedEvent event){
