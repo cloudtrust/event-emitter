@@ -1,5 +1,6 @@
 package io.cloudtrust.keycloak.eventemitter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -14,6 +15,7 @@ import org.keycloak.events.admin.AdminEvent;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Base64;
+import java.util.concurrent.LinkedBlockingQueue;
 
 
 /**
@@ -36,8 +38,8 @@ public class EventEmitterProvider implements EventListenerProvider{
     private CloseableHttpClient httpClient;
     private HttpClientContext httpContext;
     private IdGenerator idGenerator;
-    private ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents;
-    private ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents;
+    private LinkedBlockingQueue<IdentifiedEvent> pendingEvents;
+    private LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents;
     private String targetUri;
     private String username;
     private String secretToken;
@@ -55,8 +57,8 @@ public class EventEmitterProvider implements EventListenerProvider{
      */
     EventEmitterProvider(CloseableHttpClient httpClient, IdGenerator idGenerator,
                                 String targetUri, SerialisationFormat format,
-                         ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents,
-                         ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents){
+                         LinkedBlockingQueue<IdentifiedEvent> pendingEvents,
+                         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents){
         logger.debug("EventEmitterProvider contructor call");
         this.httpClient = httpClient;
         this.httpContext = HttpClientContext.create();
@@ -86,7 +88,19 @@ public class EventEmitterProvider implements EventListenerProvider{
         logger.debugf("Pending Events to send stored in buffer: %d", pendingEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
-        pendingEvents.offer(identifiedEvent);
+
+        while(!pendingEvents.offer(identifiedEvent)){
+            Event skippedEvent = pendingEvents.poll();
+            if(skippedEvent != null) {
+                String strEvent = null;
+                try {
+                    strEvent = SerialisationUtils.toJson(skippedEvent);
+                } catch (JsonProcessingException e) {
+                    strEvent = "SerializationFailure";
+                }
+                logger.errorf("Event dropped(%s) due to full queue", strEvent);
+            }
+        }
 
         sendEvents();
     }
@@ -97,7 +111,19 @@ public class EventEmitterProvider implements EventListenerProvider{
         logger.debugf("Pending AdminEvents to send stored in buffer: %d", pendingAdminEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
-        pendingAdminEvents.offer(identifiedAdminEvent);
+
+        while(!pendingAdminEvents.offer(identifiedAdminEvent)){
+            AdminEvent skippedAdminEvent = pendingAdminEvents.poll();
+            if(skippedAdminEvent != null) {
+                String strAdminEvent = null;
+                try {
+                    strAdminEvent = SerialisationUtils.toJson(skippedAdminEvent);
+                } catch (JsonProcessingException e) {
+                    strAdminEvent = "SerializationFailure";
+                }
+                logger.errorf("AdminEvent dropped(%s) due to full queue", strAdminEvent);
+            }
+        }
 
         sendEvents();
     }
@@ -125,6 +151,10 @@ public class EventEmitterProvider implements EventListenerProvider{
         for (int i=0; i < pendingEventsSize; i++){
             IdentifiedEvent event = pendingEvents.poll();
 
+            if(event == null){
+                break;
+            }
+
             try {
                 String json = SerialisationUtils.toJson(event);
                 sendJson(json);
@@ -132,12 +162,17 @@ public class EventEmitterProvider implements EventListenerProvider{
                 pendingEvents.offer(event);
                 logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
                 logger.debug("Failed to serialize or send event", e);
+                break;
             }
         }
 
         int pendingAdminEventsSize = pendingAdminEvents.size();
         for (int i=0; i < pendingAdminEventsSize; i++){
             IdentifiedAdminEvent event = pendingAdminEvents.poll();
+
+            if(event == null){
+                break;
+            }
 
             try {
                 String json = SerialisationUtils.toJson(event);
@@ -146,6 +181,7 @@ public class EventEmitterProvider implements EventListenerProvider{
                 pendingAdminEvents.offer(event);
                 logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
                 logger.debug("Failed to serialize or send adminEvent", e);
+                break;
             }
         }
     }
@@ -156,6 +192,10 @@ public class EventEmitterProvider implements EventListenerProvider{
         for (int i=0; i < pendingEventsSize; i++){
             IdentifiedEvent event = pendingEvents.poll();
 
+            if(event == null){
+                break;
+            }
+
             try {
                 ByteBuffer buffer = SerialisationUtils.toFlat(event);
                 sendBytes(buffer, Event.class.getSimpleName());
@@ -163,12 +203,17 @@ public class EventEmitterProvider implements EventListenerProvider{
                 pendingEvents.offer(event);
                 logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
                 logger.debug("Failed to serialize or send event", e);
+                break;
             }
         }
 
         int pendingAdminEventsSize = pendingAdminEvents.size();
         for (int i=0; i < pendingAdminEventsSize; i++){
             IdentifiedAdminEvent event = pendingAdminEvents.poll();
+
+            if(event == null){
+                break;
+            }
 
             try {
                 ByteBuffer buffer = SerialisationUtils.toFlat(event);
@@ -177,6 +222,7 @@ public class EventEmitterProvider implements EventListenerProvider{
                 pendingAdminEvents.offer(event);
                 logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
                 logger.debug("Failed to serialize or send adminEvent", e);
+                break;
             }
         }
     }

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.xnio.streams.ChannelInputStream;
 
@@ -58,8 +59,8 @@ public class EventEmitterProviderTest {
         Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
-        ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
-        ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
                 idGenerator, TARGET, SerialisationFormat.FLATBUFFER, pendingEvents,pendingAdminEvents);
 
@@ -88,8 +89,8 @@ public class EventEmitterProviderTest {
         Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
-        ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
-        ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
                 idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents,pendingAdminEvents);
 
@@ -111,8 +112,8 @@ public class EventEmitterProviderTest {
     public void testNoConnection() throws IOException {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
-        ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
-        ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
                 idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents,pendingAdminEvents);
 
@@ -138,8 +139,8 @@ public class EventEmitterProviderTest {
         Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
-        ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
-        ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
                 idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents,pendingAdminEvents);
 
@@ -166,8 +167,8 @@ public class EventEmitterProviderTest {
 
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1,1);
-        ConcurrentEvictingQueue<IdentifiedEvent> pendingEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
-        ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEvents = new ConcurrentEvictingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
                 idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents,pendingAdminEvents);
 

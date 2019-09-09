@@ -15,6 +15,7 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Factory for EventEmitterProvider.
@@ -50,8 +51,8 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
 
     private CloseableHttpClient httpClient;
     private IdGenerator idGenerator;
-    private ConcurrentEvictingQueue<IdentifiedEvent> pendingEventsToSend;
-    private ConcurrentEvictingQueue<IdentifiedAdminEvent> pendingAdminEventsToSend;
+    private LinkedBlockingQueue<IdentifiedEvent> pendingEventsToSend;
+    private LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEventsToSend;
 
 
 
@@ -132,8 +133,8 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
         // Initialisation
         httpClient = HttpClients.createDefault();
         idGenerator = new IdGenerator(keycloakId, datacenterId);
-        pendingEventsToSend = new ConcurrentEvictingQueue<>(bufferCapacity);
-        pendingAdminEventsToSend = new ConcurrentEvictingQueue<>(bufferCapacity);
+        pendingEventsToSend = new LinkedBlockingQueue<>(bufferCapacity);
+        pendingAdminEventsToSend = new LinkedBlockingQueue<>(bufferCapacity);
 
     }
 
