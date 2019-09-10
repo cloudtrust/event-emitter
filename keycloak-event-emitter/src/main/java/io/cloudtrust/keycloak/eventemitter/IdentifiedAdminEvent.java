@@ -3,7 +3,7 @@ package io.cloudtrust.keycloak.eventemitter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.events.admin.AdminEvent;
 
-public class IdentifiedAdminEvent extends AdminEvent{
+public class IdentifiedAdminEvent extends AdminEvent implements HasUid {
 
     private long uid;
 

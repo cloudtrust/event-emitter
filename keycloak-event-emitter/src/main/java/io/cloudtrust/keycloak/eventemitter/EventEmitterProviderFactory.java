@@ -11,7 +11,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
-
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -28,7 +27,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  *     <ul><b>datacenterId</b>: datacenterId configuration for snowflake Id generator</ul>
  * </li>
  */
-public class EventEmitterProviderFactory implements EventListenerProviderFactory, ServerInfoAwareProviderFactory{
+public class EventEmitterProviderFactory implements EventListenerProviderFactory, ServerInfoAwareProviderFactory {
 
     private static final Logger logger = Logger.getLogger(EventEmitterProviderFactory.class);
 
@@ -55,7 +54,6 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     private LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEventsToSend;
 
 
-
     public EventListenerProvider create(KeycloakSession keycloakSession) {
         logger.debug("EventEmitterProviderFactory creation");
 
@@ -69,35 +67,35 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
         // Serializer config
         String formatConfig = config.get(FORMAT_CONFIG_KEY);
 
-        if(formatConfig == null){
+        if (formatConfig == null) {
             logger.error("No serialization configuration found.");
             throw new IllegalArgumentException("No serialization configuration found.");
         }
 
         try {
             format = SerialisationFormat.valueOf(formatConfig);
-        }catch(IllegalArgumentException e){
-            logger.errorv(e, "Invalid serialization format: "+formatConfig);
+        } catch (IllegalArgumentException e) {
+            logger.errorv(e, "Invalid serialization format: " + formatConfig);
             throw e;
         }
 
         // Target URI config
         targetUri = config.get(TARGET_URI_CONFIG_KEY);
 
-        if(targetUri == null){
+        if (targetUri == null) {
             logger.error("Target URI configuration is missing.");
             throw new IllegalArgumentException("Target URI configuration is missing.");
         }
 
         // Buffer capacity
-        try{
+        try {
             bufferCapacity = config.getInt(BUFFER_CAPACITY_CONFIG_KEY);
-        }catch(NumberFormatException e){
-            logger.errorv(e,"Invalid buffer capacity configuration parameter");
+        } catch (NumberFormatException e) {
+            logger.errorv(e, "Invalid buffer capacity configuration parameter");
             throw e;
         }
 
-        if(bufferCapacity == null){
+        if (bufferCapacity == null) {
             logger.error("Buffer capacity configuration is missing");
             throw new IllegalArgumentException("Buffer capacity configuration is missing");
         }
@@ -106,25 +104,25 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
         // KeycloakId
         try {
             keycloakId = config.getInt(SNOWFLAKE_KEYCLOAKID_CONFIG_KEY);
-        }catch(NumberFormatException e){
-            logger.errorv(e,"Invalid KeycloakId configuration parameter");
+        } catch (NumberFormatException e) {
+            logger.errorv(e, "Invalid KeycloakId configuration parameter");
             throw e;
         }
 
-        if(keycloakId == null){
+        if (keycloakId == null) {
             logger.error("KeycloakId configuration is missing");
             throw new IllegalArgumentException("KeycloakId configuration is missing");
         }
 
         // DatacenterId
-        try{
+        try {
             datacenterId = config.getInt(SNOWFLAKE_DATACENTERID_CONFIG_KEY);
-        }catch(NumberFormatException e){
-            logger.errorv(e,"Invalid datacenterId configuration parameter");
+        } catch (NumberFormatException e) {
+            logger.errorv(e, "Invalid datacenterId configuration parameter");
             throw e;
         }
 
-        if(datacenterId == null){
+        if (datacenterId == null) {
             logger.error("DatacenterId configuration is missing");
             throw new IllegalArgumentException("DatacenterId configuration is missing");
         }
