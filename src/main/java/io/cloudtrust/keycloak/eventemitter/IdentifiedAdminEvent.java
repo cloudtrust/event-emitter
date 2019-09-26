@@ -1,5 +1,6 @@
 package io.cloudtrust.keycloak.eventemitter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.events.admin.AdminEvent;
 
 public class IdentifiedAdminEvent extends AdminEvent{
@@ -29,4 +30,9 @@ public class IdentifiedAdminEvent extends AdminEvent{
         return uid;
     }
 
+    @Override
+    @JsonIgnore
+    public String getResourceTypeAsString() {
+        return super.getResourceTypeAsString();
+    }
 }
