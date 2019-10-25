@@ -18,7 +18,7 @@ the related jars for testing, one needs to manually build them so that they are 
 For building these tests-jars, you need to:
 * clone the official Keycloak repository (https://github.com/keycloak/keycloak)
 * checkout the tag of the Keycloak version related to the version of the event-emitter module
-* execute `mvn clean install -dskipTests` in the Keycloak repository to build the jars and put them in your maven repository
+* execute `mvn clean install -DskipTests` in the Keycloak repository to build the jars and put them in your maven repository
 
 Once these test-jars are built, the event-emitter module can be built.
 
