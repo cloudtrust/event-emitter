@@ -11,7 +11,7 @@
     </parent>
 
     <groupId>io.cloudtrust</groupId>
-    <artifactId>event-emitter</artifactId>
+    <artifactId>keycloak-event-emitter</artifactId>
 
     <packaging>jar</packaging>
 
