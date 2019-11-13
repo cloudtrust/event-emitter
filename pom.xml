@@ -30,7 +30,7 @@
         <apache.httpcomponents.httpcore.version>4.4.4</apache.httpcomponents.httpcore.version>
         <jboss.logging.version>3.3.2.Final</jboss.logging.version>
         <junit.version>4.12</junit.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.version>2.9.10.1</jackson.version>
     </properties>
 
     <dependencies>
