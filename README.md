@@ -9,7 +9,7 @@ The aim of this module is to send those Events and AdminEvents to another server
 Java 8 is required (Java 9+ is not supported yet).
 
 ### Build and Tests
-This module contains both unit and integration tests, and a parent inherited from Keycloak tests for simplifying the
+This project 2 modules, one with the event emitter code (could contain unit tests) and one for integration tests using a parent inherited from Keycloak tests for simplifying the
 POM content.
 
 The integration tests rely on the arquillian-based Keycloak test framework. As Keycloak does not publish publicly
@@ -29,12 +29,12 @@ with the module.
 ## Installation
 Event emitter module is expected to be installed as a module in a specific layer.
 
-To install the release, use the TAR.GZ file produced by the build; either run the `install.sh` script
+To install the release, go to event-emitter module directory and use the TAR.GZ file produced by the build; either run the `install.sh` script
 or manually proceed as follows:
 
 ```Bash
 # Install the module binaries
-tar -zxf event-emitter-<version>.Final-dist.tar.gz --directory <PATH_TO_KEYCLOAK>/modules/system/layers
+tar -zxf keycloak-event-emitter-<version>-dist.tar.gz --directory <PATH_TO_KEYCLOAK>/modules/system/layers
 
 # Set the appropriate permissions on the new files
 chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/event-emitter
@@ -101,6 +101,7 @@ This module will authenticate itself to the server endpoint with Basic authentic
 
 ### Flatbuffers
 
+Go to event-emitter module directory.
 Flatbuffers schema is located under src/main/flatbuffers/flatbuffers/event.fbs.
 
 Compilation of the schema

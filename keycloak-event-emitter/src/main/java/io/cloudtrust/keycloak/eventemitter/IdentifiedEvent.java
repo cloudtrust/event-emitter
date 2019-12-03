@@ -3,7 +3,7 @@ package io.cloudtrust.keycloak.eventemitter;
 
 import org.keycloak.events.Event;
 
-public class IdentifiedEvent extends Event {
+public class IdentifiedEvent extends Event implements HasUid {
 
     private long uid;
 

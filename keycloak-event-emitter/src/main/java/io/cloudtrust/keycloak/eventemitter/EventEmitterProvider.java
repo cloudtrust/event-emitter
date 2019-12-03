@@ -35,6 +35,10 @@ public class EventEmitterProvider implements EventListenerProvider{
 
     private static final int HTTP_OK = 200;
 
+    interface EventSender<T extends HasUid> {
+        void send(T event) throws EventEmitterException, IOException;
+    }
+
     private CloseableHttpClient httpClient;
     private HttpClientContext httpContext;
     private IdGenerator idGenerator;
@@ -69,18 +73,19 @@ public class EventEmitterProvider implements EventListenerProvider{
         this.pendingAdminEvents = pendingAdminEvents;
 
         // Secret token
-        secretToken = System.getenv(KEYCLOAK_BRIDGE_SECRET_TOKEN);
-        if (secretToken == null) {
-            logger.error("Cannot find the environment variable '" + KEYCLOAK_BRIDGE_SECRET_TOKEN + "'");
-            throw new IllegalStateException("Cannot find the environment variable '" + KEYCLOAK_BRIDGE_SECRET_TOKEN + "'");
-        }
-
+        secretToken = checkEnv(KEYCLOAK_BRIDGE_SECRET_TOKEN);
         // Hostname
-        username = System.getenv(HOSTNAME);
-        if (username == null) {
-            logger.error("Cannot find the environment variable '" + HOSTNAME + "'");
-            throw new IllegalStateException("Cannot find the environment variable '" + HOSTNAME + "'");
+        username = checkEnv(HOSTNAME);
+    }
+
+    private String checkEnv(String key) {
+        String env = System.getenv(key);
+        if (env != null) {
+            return env;
         }
+        String message = "Cannot find the environment variable '" + key + "'";
+        logger.error(message);
+        throw new IllegalStateException(message);
     }
 
     public void onEvent(Event event) {
@@ -146,87 +151,35 @@ public class EventEmitterProvider implements EventListenerProvider{
     }
 
 
-    private void sendEventsWithJsonFormat() {
-        int pendingEventsSize = pendingEvents.size();
+    private <T extends HasUid> void sendEvents(LinkedBlockingQueue<T> queue, EventSender<T> eventProcessor) {
+        int pendingEventsSize = queue.size();
         for (int i=0; i < pendingEventsSize; i++){
-            IdentifiedEvent event = pendingEvents.poll();
+            T event = queue.poll();
 
             if(event == null){
                 break;
             }
 
             try {
-                String json = SerialisationUtils.toJson(event);
-                sendJson(json);
+                eventProcessor.send(event);
             } catch (EventEmitterException | IOException e) {
-                pendingEvents.offer(event);
-                logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
+                String repushed = queue.offer(event) ? "success" : "failure";
+                logger.infof("Failed to send %s(ID=%s), try again later. Re-push: %s", event.getClass().getName(), event.getUid(), repushed);
                 logger.debug("Failed to serialize or send event", e);
-                break;
-            }
-        }
-
-        int pendingAdminEventsSize = pendingAdminEvents.size();
-        for (int i=0; i < pendingAdminEventsSize; i++){
-            IdentifiedAdminEvent event = pendingAdminEvents.poll();
-
-            if(event == null){
-                break;
-            }
-
-            try {
-                String json = SerialisationUtils.toJson(event);
-                sendJson(json);
-            } catch (EventEmitterException | IOException e) {
-                pendingAdminEvents.offer(event);
-                logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
-                logger.debug("Failed to serialize or send adminEvent", e);
                 break;
             }
         }
     }
 
+    private void sendEventsWithJsonFormat() {
+        sendEvents(pendingEvents, e -> sendJson(SerialisationUtils.toJson(e)));
+        sendEvents(pendingAdminEvents, e -> sendJson(SerialisationUtils.toJson(e)));
+    }
 
     private void sendEventsWithFlatbufferFormat() {
-        int pendingEventsSize = pendingEvents.size();
-        for (int i=0; i < pendingEventsSize; i++){
-            IdentifiedEvent event = pendingEvents.poll();
-
-            if(event == null){
-                break;
-            }
-
-            try {
-                ByteBuffer buffer = SerialisationUtils.toFlat(event);
-                sendBytes(buffer, Event.class.getSimpleName());
-            } catch (EventEmitterException | IOException e) {
-                pendingEvents.offer(event);
-                logger.infof("Failed to send event(ID=%s), try again later.", event.getUid());
-                logger.debug("Failed to serialize or send event", e);
-                break;
-            }
-        }
-
-        int pendingAdminEventsSize = pendingAdminEvents.size();
-        for (int i=0; i < pendingAdminEventsSize; i++){
-            IdentifiedAdminEvent event = pendingAdminEvents.poll();
-
-            if(event == null){
-                break;
-            }
-
-            try {
-                ByteBuffer buffer = SerialisationUtils.toFlat(event);
-                sendBytes(buffer, AdminEvent.class.getSimpleName());
-            } catch (EventEmitterException | IOException e) {
-                pendingAdminEvents.offer(event);
-                logger.infof("Failed to send adminEvent(ID=%s), try again later.", event.getUid());
-                logger.debug("Failed to serialize or send adminEvent", e);
-                break;
-            }
-        }
+        sendEvents(pendingEvents, e -> sendBytes(SerialisationUtils.toFlat(e), Event.class.getSimpleName()));
+        sendEvents(pendingAdminEvents, e -> sendBytes(SerialisationUtils.toFlat(e), AdminEvent.class.getSimpleName()));
     }
-
 
     private void sendBytes(ByteBuffer buffer, String type) throws IOException, EventEmitterException {
         byte[] b = new byte[buffer.remaining()];
