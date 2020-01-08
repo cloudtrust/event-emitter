@@ -12,9 +12,14 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
 
 @RunWith(Arquillian.class)
 @RunAsClient
@@ -29,7 +34,7 @@ public class MessageGenerationItTest extends AbstractTest {
     public ExpectedException expectedEx = ExpectedException.none();
 
     @BeforeClass
-    public static void initRealmAndUsers() throws Exception {
+    public static void initRealmAndUsers() {
         // setup event listener
         Keycloak keycloak = Keycloak.getInstance(KEYCLOAK_URL, "master", "admin", "admin", CLIENT);
         RealmEventsConfigRepresentation eventConfig = keycloak.realm("master").getRealmEventsConfig();
@@ -59,4 +64,21 @@ public class MessageGenerationItTest extends AbstractTest {
         Assert.assertEquals(1, nbLoginEvents);
     }
 
+    /**
+     * Simulate logout, and expect the event emitter to report this event
+     */
+    @Test
+    public void testLogoutEventReporting () throws Exception {
+        loginPage.open();
+        loginPage.login("test.user","password");
+        EventRepresentation event = pollEvent();
+        assertThat(event.getType(), is(EventType.LOGIN.toString()));
+
+        oauth.openLogout();
+        event = pollEvent();
+        assertThat(event.getType(), is(EventType.LOGOUT.toString()));
+        assertThat(event.getUserId(), is(not(nullValue())));
+        assertThat(event.getDetails().get(Details.USERNAME), is("test.user"));
+        assertThat(pollEvent(), is(nullValue()));
+    }
 }
