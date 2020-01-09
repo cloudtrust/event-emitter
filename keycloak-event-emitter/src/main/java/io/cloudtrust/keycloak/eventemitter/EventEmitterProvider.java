@@ -235,7 +235,9 @@ public class EventEmitterProvider implements EventListenerProvider {
             // retrieve username from userId
             UserModel user = keycloakSession.users().getUserById(event.getUserId(),
                     keycloakSession.realms().getRealm(event.getRealmId()));
-            event.getDetails().put(Details.USERNAME, user.getUsername());
+            if (user != null) {
+                event.getDetails().put(Details.USERNAME, user.getUsername());
+            }
         }
     }
 

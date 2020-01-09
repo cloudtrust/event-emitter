@@ -5,18 +5,19 @@ public class Container {
     private String type;
     private String obj;
 
-    public Container(){}
+    public Container() {
+    }
 
-    public Container(String type, String obj){
+    public Container(String type, String obj) {
         this.type = type;
         this.obj = obj;
     }
 
-    public String getType(){
+    public String getType() {
         return type;
     }
 
-    public String getObj(){
+    public String getObj() {
         return obj;
     }
 }

@@ -10,10 +10,10 @@ public class IdentifiedAdminEvent extends AdminEvent implements HasUid {
     /**
      * Constructor by copy which add a uid to AdminEvent.
      *
-     * @param uid for idempotence
+     * @param uid        for idempotence
      * @param adminEvent original adminEvent
      */
-    IdentifiedAdminEvent(long uid, AdminEvent adminEvent){
+    IdentifiedAdminEvent(long uid, AdminEvent adminEvent) {
         this.uid = uid;
 
         setTime(adminEvent.getTime());
@@ -26,7 +26,7 @@ public class IdentifiedAdminEvent extends AdminEvent implements HasUid {
         setError(adminEvent.getError());
     }
 
-    public long getUid(){
+    public long getUid() {
         return uid;
     }
 

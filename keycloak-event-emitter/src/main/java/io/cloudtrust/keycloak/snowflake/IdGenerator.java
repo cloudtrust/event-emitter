@@ -1,24 +1,23 @@
 package io.cloudtrust.keycloak.snowflake;
 
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects;
+import org.jboss.logging.Logger;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.KEYCLOAK_ID_BITS;
-import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.KEYCLOAK_ID_SHIFT;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.DATACENTER_ID_BITS;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.DATACENTER_ID_SHIFT;
-import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.MAX_KEYCLOAK_ID;
+import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.KEYCLOAK_ID_BITS;
+import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.KEYCLOAK_ID_SHIFT;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.MAX_DATACENTER_ID;
+import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.MAX_KEYCLOAK_ID;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.SEQUENCE_BITS;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.SEQUENCE_MASK;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.START_EPOCH;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.TIMESTAMP_LEFT_SHIFT;
-
-import org.jboss.logging.Logger;
 
 
 /**
@@ -40,19 +39,19 @@ public class IdGenerator {
 
     public IdGenerator(final int keycloakId, final int datacenterId, final long startSequence) {
 
-    checkNotNull(keycloakId);
-    checkArgument(keycloakId >= 0, String.format("component Id can't be greater than %d or less than 0",
-            MAX_KEYCLOAK_ID));
-    checkArgument(keycloakId <= MAX_KEYCLOAK_ID, String.format("component Id can't be greater than %d "
-            + "or less than 0", MAX_KEYCLOAK_ID));
+        checkNotNull(keycloakId);
+        checkArgument(keycloakId >= 0, String.format("component Id can't be greater than %d or less than 0",
+                MAX_KEYCLOAK_ID));
+        checkArgument(keycloakId <= MAX_KEYCLOAK_ID, String.format("component Id can't be greater than %d "
+                + "or less than 0", MAX_KEYCLOAK_ID));
 
-    checkNotNull(datacenterId);
-    checkArgument(datacenterId >= 0, String.format("Datacenter ID can't be greater than %d or less than 0",
-            MAX_DATACENTER_ID));
-    checkArgument(datacenterId <= MAX_DATACENTER_ID, String.format("Datacenter ID can't be greater than %d or "
-            + "less than 0", MAX_DATACENTER_ID));
+        checkNotNull(datacenterId);
+        checkArgument(datacenterId >= 0, String.format("Datacenter ID can't be greater than %d or less than 0",
+                MAX_DATACENTER_ID));
+        checkArgument(datacenterId <= MAX_DATACENTER_ID, String.format("Datacenter ID can't be greater than %d or "
+                + "less than 0", MAX_DATACENTER_ID));
 
-    checkNotNull(startSequence);
+        checkNotNull(startSequence);
 
         this.keycloakId = keycloakId;
         this.datacenterId = datacenterId;

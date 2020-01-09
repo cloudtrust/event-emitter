@@ -18,7 +18,9 @@ import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 @RunWith(Arquillian.class)
@@ -47,7 +49,7 @@ public class MessageGenerationItTest extends AbstractTest {
      * Simulate login, and expect the event emitter to report this event
      */
     @Test
-    public void testLoginEventReporting () throws Exception {
+    public void testLoginEventReporting() throws Exception {
         int nbLoginEvents = 0;
         Keycloak keycloak = Keycloak.getInstance(KEYCLOAK_URL, "master", "admin", "admin", CLIENT);
 
@@ -58,7 +60,7 @@ public class MessageGenerationItTest extends AbstractTest {
         String jsonAsString = handler.toString();
         Gson g = new Gson();
         Event e = g.fromJson(jsonAsString, Event.class);
-        if (e.getType()==EventType.LOGIN) {
+        if (e.getType() == EventType.LOGIN) {
             nbLoginEvents++;
         }
         Assert.assertEquals(1, nbLoginEvents);
@@ -68,9 +70,9 @@ public class MessageGenerationItTest extends AbstractTest {
      * Simulate logout, and expect the event emitter to report this event
      */
     @Test
-    public void testLogoutEventReporting () throws Exception {
+    public void testLogoutEventReporting() throws Exception {
         loginPage.open();
-        loginPage.login("test.user","password");
+        loginPage.login("test.user", "password");
         EventRepresentation event = pollEvent();
         assertThat(event.getType(), is(EventType.LOGIN.toString()));
 

@@ -49,13 +49,13 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testEventMinimalToJson(){
+    public void testEventMinimalToJson() {
         Event eventMinimal = createMinimalEvent();
         try {
             String jsonEvent = SerialisationUtils.toJson(new IdentifiedEvent(UID, eventMinimal));
             Assert.assertEquals("{\"time\":120000,\"type\":\"CLIENT_LOGIN\"," +
                     "\"realmId\":null,\"clientId\":null,\"userId\":null,\"sessionId\":null," +
-                    "\"ipAddress\":null,\"error\":null,\"details\":null,\"uid\":123456789}", jsonEvent );
+                    "\"ipAddress\":null,\"error\":null,\"details\":null,\"uid\":123456789}", jsonEvent);
         } catch (JsonProcessingException e) {
             Assert.fail();
         }
@@ -63,7 +63,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testAdminEventToJson(){
+    public void testAdminEventToJson() {
         AdminEvent event = createAdminEvent();
         try {
             String jsonEvent = SerialisationUtils.toJson(new IdentifiedAdminEvent(UID, event));
@@ -74,7 +74,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testMinimalAdminEventToJson(){
+    public void testMinimalAdminEventToJson() {
         AdminEvent event = createMinimalAdminEvent();
         try {
             String jsonEvent = SerialisationUtils.toJson(new IdentifiedAdminEvent(UID, event));
@@ -85,7 +85,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testEventToFlatbuffers(){
+    public void testEventToFlatbuffers() {
         Event event = createEvent();
         ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedEvent(UID, event));
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
@@ -94,7 +94,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testMinimalEventToFlatbuffers(){
+    public void testMinimalEventToFlatbuffers() {
         Event event = createMinimalEvent();
         ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedEvent(UID, event));
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
@@ -103,7 +103,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testAdminEventToFlatbuffers(){
+    public void testAdminEventToFlatbuffers() {
         AdminEvent adminEvent = createAdminEvent();
         ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedAdminEvent(UID, adminEvent));
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
@@ -112,7 +112,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testMinimalAdminEventToFlatbuffers(){
+    public void testMinimalAdminEventToFlatbuffers() {
         AdminEvent adminEvent = createMinimalAdminEvent();
         ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedAdminEvent(UID, adminEvent));
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
@@ -138,14 +138,14 @@ public class SerializationUtilsTest {
         return event;
     }
 
-    private Event createMinimalEvent(){
+    private Event createMinimalEvent() {
         Event event = new Event();
         event.setTime(120000);
         event.setType(EventType.CLIENT_LOGIN);
         return event;
     }
 
-    private AdminEvent createAdminEvent(){
+    private AdminEvent createAdminEvent() {
         AdminEvent adminEvent = new AdminEvent();
         adminEvent.setTime(120000);
         adminEvent.setRealmId("realmId");
@@ -163,71 +163,70 @@ public class SerializationUtilsTest {
         return adminEvent;
     }
 
-    private AdminEvent createMinimalAdminEvent(){
+    private AdminEvent createMinimalAdminEvent() {
         AdminEvent adminEvent = new AdminEvent();
         adminEvent.setTime(120000);
         return adminEvent;
     }
 
-    private boolean equals(Event event, flatbuffers.events.Event eventFlat){
-        if(event.getTime() != eventFlat.time()){
+    private boolean equals(Event event, flatbuffers.events.Event eventFlat) {
+        if (event.getTime() != eventFlat.time()) {
             return false;
         }
 
-        if(event.getType().ordinal() != eventFlat.type()){
+        if (event.getType().ordinal() != eventFlat.type()) {
             return false;
         }
 
-        if(!Objects.equals(event.getRealmId(),eventFlat.realmId())){
+        if (!Objects.equals(event.getRealmId(), eventFlat.realmId())) {
             return false;
         }
 
-        if(!Objects.equals(event.getClientId(), eventFlat.clientId())){
+        if (!Objects.equals(event.getClientId(), eventFlat.clientId())) {
             return false;
         }
 
-        if(!Objects.equals(event.getUserId(), eventFlat.userId())){
+        if (!Objects.equals(event.getUserId(), eventFlat.userId())) {
             return false;
         }
 
-        if(!Objects.equals(event.getSessionId(), eventFlat.sessionId())){
+        if (!Objects.equals(event.getSessionId(), eventFlat.sessionId())) {
             return false;
         }
 
-        if(!Objects.equals(event.getIpAddress(), eventFlat.ipAddress())){
+        if (!Objects.equals(event.getIpAddress(), eventFlat.ipAddress())) {
             return false;
         }
 
-        if(!Objects.equals(event.getError(), eventFlat.error())){
+        if (!Objects.equals(event.getError(), eventFlat.error())) {
             return false;
         }
 
-        if(event.getDetails() == null){
-            if(eventFlat.detailsLength() != 0){
+        if (event.getDetails() == null) {
+            if (eventFlat.detailsLength() != 0) {
                 return false;
             }
-        }
-        else if(event.getDetails().size() != eventFlat.detailsLength()){
+        } else if (event.getDetails().size() != eventFlat.detailsLength()) {
             return false;
         }
 
         return true;
     }
 
-    private boolean equals(AdminEvent adminEvent, flatbuffers.events.AdminEvent adminEventFlat){
-        if(adminEvent.getTime() != adminEventFlat.time()){
+    private boolean equals(AdminEvent adminEvent, flatbuffers.events.AdminEvent adminEventFlat) {
+        if (adminEvent.getTime() != adminEventFlat.time()) {
             return false;
         }
 
-        if(!Objects.equals(adminEvent.getRealmId(), adminEventFlat.realmId())){
+        if (!Objects.equals(adminEvent.getRealmId(), adminEventFlat.realmId())) {
             return false;
         }
 
-        if(adminEvent.getAuthDetails() == null ){
-            if(adminEventFlat.authDetails() != null){
+        if (adminEvent.getAuthDetails() == null) {
+            if (adminEventFlat.authDetails() != null) {
                 return false;
             }
-        }else {
+        } else {
             if (!Objects.equals(adminEvent.getAuthDetails().getUserId(), adminEventFlat.authDetails().userId())) {
                 return false;
             }
@@ -242,33 +241,31 @@ public class SerializationUtilsTest {
             }
         }
 
-        if(adminEvent.getResourceType() == null){
-            if(adminEventFlat.resourceType() != 0){
+        if (adminEvent.getResourceType() == null) {
+            if (adminEventFlat.resourceType() != 0) {
                 return false;
             }
-        }
-        else if(adminEvent.getResourceType().ordinal() != adminEventFlat.resourceType()){
+        } else if (adminEvent.getResourceType().ordinal() != adminEventFlat.resourceType()) {
             return false;
         }
 
-        if(adminEvent.getOperationType() == null){
-            if(adminEventFlat.operationType() != 0){
+        if (adminEvent.getOperationType() == null) {
+            if (adminEventFlat.operationType() != 0) {
                 return false;
             }
-        }
-        else if(adminEvent.getOperationType().ordinal() != adminEventFlat.operationType()){
+        } else if (adminEvent.getOperationType().ordinal() != adminEventFlat.operationType()) {
             return false;
         }
 
-        if(!Objects.equals(adminEvent.getResourcePath(), adminEventFlat.resourcePath())){
+        if (!Objects.equals(adminEvent.getResourcePath(), adminEventFlat.resourcePath())) {
             return false;
         }
 
-        if(!Objects.equals(adminEvent.getRepresentation(), adminEventFlat.representation())){
+        if (!Objects.equals(adminEvent.getRepresentation(), adminEventFlat.representation())) {
             return false;
         }
 
-        if(!Objects.equals(adminEvent.getError(), adminEventFlat.error())){
+        if (!Objects.equals(adminEvent.getError(), adminEventFlat.error())) {
             return false;
         }
 

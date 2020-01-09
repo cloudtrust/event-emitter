@@ -14,11 +14,14 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -123,6 +126,7 @@ public abstract class AbstractTest {
 
     protected static HttpHandler handler = new HttpHandler() {
         private String jsonReceived;
+
         @Override
         public void handleRequest(HttpServerExchange exchange) throws Exception {
             String basicToken = exchange.getRequestHeaders().get("Authorization").element();
@@ -130,7 +134,7 @@ public abstract class AbstractTest {
             Assert.assertEquals(2, subParts.length);
             String decodedToken = new String(Base64.getDecoder().decode(subParts[1]));
 
-            if (!(username+":"+password).equals(decodedToken)) {
+            if (!(username + ":" + password).equals(decodedToken)) {
                 exchange.setStatusCode(StatusCodes.FORBIDDEN);
                 return;
             }
@@ -139,6 +143,7 @@ public abstract class AbstractTest {
             ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
             jsonReceived = IOUtils.toString(cis, StandardCharsets.UTF_8);
         }
+
         public String toString() {
             return jsonReceived;
         }
@@ -182,9 +187,9 @@ public abstract class AbstractTest {
                 testUser.setCredentials(new LinkedList<>());
             }
             testUser.getCredentials().add(credentialPass);
-            Response createUser = testRealm.users().create(testUser);
-            Assert.assertEquals(201, createUser.getStatus());
-            createUser.close();
+            try (Response createUser = testRealm.users().create(testUser)) {
+                Assert.assertEquals(201, createUser.getStatus());
+            }
         }
     }
 
