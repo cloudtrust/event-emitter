@@ -80,7 +80,7 @@ init()
     echo $CONF_FILE
     MODULE_NAME=$(xmlstarlet sel -N oe="urn:jboss:module:1.3" -t -v '/oe:module/@name' -n $MODULE_DIR/module.xml)
     MODULE=${MODULE_NAME##*.}
-    JAR_PATH=`find $TARGET_DIR/ -type f -name "*.jar" -not -name "*sources.jar"`
+    JAR_PATH=`find $TARGET_DIR/ -type f -name "*.jar" -not -name "*sources.jar" | grep -v "archive-tmp"`
     JAR_NAME=`basename $JAR_PATH`
     MODULE_PATH=${MODULE_NAME//./\/}/main
 }
@@ -176,9 +176,6 @@ Main__main()
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties" -t elem -n property $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[not(@*)]" -t attr -n name -v 'datacenterId' $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='datacenterId']" -t attr -n value -v '1' $CONF_FILE
-
-    # copy libs to main directory
-    cp ${LIBRARY_DIR}/main/* $argv__KEYCLOAK/modules/system/layers/$MODULE/$MODULE_PATH/
 
     exit 0
 }
