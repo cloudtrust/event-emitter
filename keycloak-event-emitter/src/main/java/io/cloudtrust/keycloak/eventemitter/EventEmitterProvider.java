@@ -1,6 +1,7 @@
 package io.cloudtrust.keycloak.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Strings;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -8,13 +9,17 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
+import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 
@@ -23,7 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Provider which emit a serialized version of the event to the targetUri.
  * Serialization format can either be flatbuffer or json according to constructor parameter.
  */
-public class EventEmitterProvider implements EventListenerProvider{
+public class EventEmitterProvider implements EventListenerProvider {
 
     private static final Logger logger = Logger.getLogger(EventEmitterProvider.class);
 
@@ -39,6 +44,7 @@ public class EventEmitterProvider implements EventListenerProvider{
         void send(T event) throws EventEmitterException, IOException;
     }
 
+    private KeycloakSession keycloakSession;
     private CloseableHttpClient httpClient;
     private HttpClientContext httpContext;
     private IdGenerator idGenerator;
@@ -52,18 +58,21 @@ public class EventEmitterProvider implements EventListenerProvider{
     /**
      * Constructor.
      *
-     * @param httpClient to send serialized events to target server
-     * @param idGenerator for unique event ID genration
-     * @param targetUri where serialized events are sent
-     * @param format of the serialized events
-     * @param pendingEvents to send due to failure during previous trial
+     * @param keycloakSession    session context
+     * @param httpClient         to send serialized events to target server
+     * @param idGenerator        for unique event ID genration
+     * @param targetUri          where serialized events are sent
+     * @param format             of the serialized events
+     * @param pendingEvents      to send due to failure during previous trial
      * @param pendingAdminEvents to send due to failure during previous trial
      */
-    EventEmitterProvider(CloseableHttpClient httpClient, IdGenerator idGenerator,
-                                String targetUri, SerialisationFormat format,
+    EventEmitterProvider(KeycloakSession keycloakSession,
+                         CloseableHttpClient httpClient, IdGenerator idGenerator,
+                         String targetUri, SerialisationFormat format,
                          LinkedBlockingQueue<IdentifiedEvent> pendingEvents,
-                         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents){
-        logger.debug("EventEmitterProvider contructor call");
+                         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents) {
+        logger.debug("EventEmitterProvider constructor call");
+        this.keycloakSession = keycloakSession;
         this.httpClient = httpClient;
         this.httpContext = HttpClientContext.create();
         this.idGenerator = idGenerator;
@@ -90,13 +99,14 @@ public class EventEmitterProvider implements EventListenerProvider{
 
     public void onEvent(Event event) {
         logger.debug("EventEmitterProvider onEvent call for Event");
+        completeEventAttributes(event);
         logger.debugf("Pending Events to send stored in buffer: %d", pendingEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
 
-        while(!pendingEvents.offer(identifiedEvent)){
+        while (!pendingEvents.offer(identifiedEvent)) {
             Event skippedEvent = pendingEvents.poll();
-            if(skippedEvent != null) {
+            if (skippedEvent != null) {
                 String strEvent = null;
                 try {
                     strEvent = SerialisationUtils.toJson(skippedEvent);
@@ -117,9 +127,9 @@ public class EventEmitterProvider implements EventListenerProvider{
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
 
-        while(!pendingAdminEvents.offer(identifiedAdminEvent)){
+        while (!pendingAdminEvents.offer(identifiedAdminEvent)) {
             AdminEvent skippedAdminEvent = pendingAdminEvents.poll();
-            if(skippedAdminEvent != null) {
+            if (skippedAdminEvent != null) {
                 String strAdminEvent = null;
                 try {
                     strAdminEvent = SerialisationUtils.toJson(skippedAdminEvent);
@@ -153,10 +163,10 @@ public class EventEmitterProvider implements EventListenerProvider{
 
     private <T extends HasUid> void sendEvents(LinkedBlockingQueue<T> queue, EventSender<T> eventProcessor) {
         int pendingEventsSize = queue.size();
-        for (int i=0; i < pendingEventsSize; i++){
+        for (int i = 0; i < pendingEventsSize; i++) {
             T event = queue.poll();
 
-            if(event == null){
+            if (event == null) {
                 break;
             }
 
@@ -211,6 +221,22 @@ public class EventEmitterProvider implements EventListenerProvider{
             if (status != HTTP_OK) {
                 logger.errorv("Sending failure (Server response:{0})", status);
                 throw new EventEmitterException("Target server failure.");
+            }
+        }
+    }
+
+    private void completeEventAttributes(Event event) {
+        // add missing username
+        if (event.getDetails() == null) {
+            event.setDetails(new HashMap<>());
+        }
+        String username = event.getDetails().get(Details.USERNAME);
+        if (!Strings.isNullOrEmpty(event.getUserId()) && Strings.isNullOrEmpty(username)) {
+            // retrieve username from userId
+            UserModel user = keycloakSession.users().getUserById(event.getUserId(),
+                    keycloakSession.realms().getRealm(event.getRealmId()));
+            if (user != null) {
+                event.getDetails().put(Details.USERNAME, user.getUsername());
             }
         }
     }

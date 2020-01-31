@@ -32,7 +32,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     private static final Logger logger = Logger.getLogger(EventEmitterProviderFactory.class);
 
     private static final String PROVIDER_NAME = "Event Emitter";
-    private static final String PROVIDER_ID = "event-emitter";
+    public static final String PROVIDER_ID = "event-emitter";
     private static final String PROVIDER_VERSION = "1.0";
 
     private static final String TARGET_URI_CONFIG_KEY = "targetUri";
@@ -57,7 +57,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     public EventListenerProvider create(KeycloakSession keycloakSession) {
         logger.debug("EventEmitterProviderFactory creation");
 
-        return new EventEmitterProvider(httpClient, idGenerator, targetUri,
+        return new EventEmitterProvider(keycloakSession, httpClient, idGenerator, targetUri,
                 format, pendingEventsToSend, pendingAdminEventsToSend);
     }
 

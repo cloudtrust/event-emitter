@@ -11,12 +11,26 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.runner.RunWith;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.RealmAdapter;
+import org.keycloak.models.jpa.UserAdapter;
+import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
+import org.mockito.Answers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.xnio.streams.ChannelInputStream;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -24,16 +38,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.xnio.streams.ChannelInputStream;
-
+@RunWith(MockitoJUnitRunner.class)
 public class EventEmitterProviderTest {
 
     private static final int LISTEN_PORT = 9994;
-    private static final String TARGET = "http://localhost:"+LISTEN_PORT+"/test";
+    private static final String TARGET = "http://localhost:" + LISTEN_PORT + "/test";
     private static int BUFFER_CAPACITY = 3;
 
     private static final String username = "toto";
     private static final String password = "passwordverylongandhardtoguess";
+
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private KeycloakSession keycloakSession;
 
     @ClassRule
     public static final EnvironmentVariables envVariables = new EnvironmentVariables();
@@ -53,16 +69,31 @@ public class EventEmitterProviderTest {
         return server;
     }
 
+    @Before
+    public void initMock() {
+        // user
+        UserEntity userEntity = new UserEntity();
+        userEntity.setUsername("test-user");
+        UserModel user = new UserAdapter(null, null, null, userEntity);
+        Mockito.when(keycloakSession.users().getUserById(Mockito.any(), Mockito.any())).thenReturn(user);
+
+        // Realm
+        RealmEntity realmEntity = new RealmEntity();
+        realmEntity.setId("realmId");
+        RealmModel realm = new RealmAdapter(null, null, realmEntity);
+        Mockito.when(keycloakSession.realms().getRealm(Mockito.any())).thenReturn(realm);
+    }
+
     @Test
-    public void testFlatbufferFormatOutput() throws IOException, InterruptedException {
+    public void testFlatbufferFormatOutput() throws IOException {
         HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
         Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        IdGenerator idGenerator = new IdGenerator(1,1);
+        IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
-                idGenerator, TARGET, SerialisationFormat.FLATBUFFER, pendingEvents,pendingAdminEvents);
+        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
+                idGenerator, TARGET, SerialisationFormat.FLATBUFFER, pendingEvents, pendingAdminEvents);
 
         Event event = createEvent();
         eventEmitterProvider.onEvent(event);
@@ -85,14 +116,14 @@ public class EventEmitterProviderTest {
 
     @Test
     public void testJsonFormatOutput() throws IOException, InterruptedException {
-        HttpJsonReceiverHandler handler =  new HttpJsonReceiverHandler();
+        HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
         Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        IdGenerator idGenerator = new IdGenerator(1,1);
+        IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents,pendingAdminEvents);
+        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
+                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
 
         Event event = createEvent();
         eventEmitterProvider.onEvent(event);
@@ -111,11 +142,11 @@ public class EventEmitterProviderTest {
     @Test
     public void testNoConnection() throws IOException {
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        IdGenerator idGenerator = new IdGenerator(1,1);
+        IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents,pendingAdminEvents);
+        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
+                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
 
         Assert.assertEquals(0, pendingEvents.size());
 
@@ -135,14 +166,14 @@ public class EventEmitterProviderTest {
 
     @Test
     public void testServerError() throws IOException, InterruptedException {
-        HttpErrorHandler handler =  new HttpErrorHandler();
+        HttpErrorHandler handler = new HttpErrorHandler();
         Undertow server = startHttpServer(handler);
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        IdGenerator idGenerator = new IdGenerator(1,1);
+        IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents,pendingAdminEvents);
+        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
+                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
 
 
         Assert.assertEquals(0, pendingEvents.size());
@@ -163,14 +194,14 @@ public class EventEmitterProviderTest {
 
     @Test
     public void testBufferAndSend() throws IOException, InterruptedException {
-        HttpJsonReceiverHandler handler =  new HttpJsonReceiverHandler();
+        HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
 
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        IdGenerator idGenerator = new IdGenerator(1,1);
+        IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents,pendingAdminEvents);
+        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
+                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
 
         Assert.assertEquals(0, pendingEvents.size());
 
@@ -213,11 +244,11 @@ public class EventEmitterProviderTest {
             counter++;
         }
 
-        String getResponse(){
+        String getResponse() {
             return jsonReceived;
         }
 
-        int getCounter(){
+        int getCounter() {
             return counter;
         }
     }
@@ -235,7 +266,7 @@ public class EventEmitterProviderTest {
 
     }
 
-    private Event createEvent(){
+    private Event createEvent() {
         Event event = new Event();
         event.setTime(120001);
         event.setType(EventType.CLIENT_LOGIN);

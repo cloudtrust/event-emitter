@@ -23,7 +23,7 @@ class SerialisationUtils {
         return objectMapperProvider.get().writeValueAsString(obj);
     }
 
-    static ByteBuffer toFlat(IdentifiedEvent event){
+    static ByteBuffer toFlat(IdentifiedEvent event) {
         FlatBufferBuilder builder = new FlatBufferBuilder(FLATBUFFER_INIT_SIZE);
 
         // uid
@@ -35,54 +35,54 @@ class SerialisationUtils {
         // Type
         byte type;
         // size of the list minus 1 because we add UNKNOWN event type in flatbuffers list
-        int eventTypeSize = flatbuffers.events.EventType.names.length -1;
+        int eventTypeSize = flatbuffers.events.EventType.names.length - 1;
 
-        if (event.getType().ordinal() < eventTypeSize){
+        if (event.getType().ordinal() < eventTypeSize) {
             type = (byte) event.getType().ordinal();
-        }else{
+        } else {
             // EventType returned by the Event is unknown by flatbuffers
             type = flatbuffers.events.EventType.UNKNOWN;
         }
 
         // RealmId
         int realmId = 0;
-        if (event.getRealmId() != null ){
+        if (event.getRealmId() != null) {
             realmId = builder.createString(event.getRealmId());
         }
 
         // ClientId
         int clientId = 0;
-        if (event.getClientId() != null ) {
+        if (event.getClientId() != null) {
             clientId = builder.createString(event.getClientId());
         }
 
         // UserId
         int userId = 0;
-        if (event.getUserId() != null ) {
+        if (event.getUserId() != null) {
             userId = builder.createString(event.getUserId());
         }
 
         // SessionId
         int sessionId = 0;
-        if (event.getSessionId() != null ) {
+        if (event.getSessionId() != null) {
             sessionId = builder.createString(event.getSessionId());
         }
 
         // IpAddress
         int ipAddress = 0;
-        if (event.getIpAddress() != null ) {
+        if (event.getIpAddress() != null) {
             ipAddress = builder.createString(event.getIpAddress());
         }
 
         // Error
         int error = 0;
-        if (event.getError() != null ) {
+        if (event.getError() != null) {
             error = builder.createString(event.getError());
         }
 
         // Details
         int detailsVec = 0;
-        if (event.getDetails() != null ) {
+        if (event.getDetails() != null) {
             List<Integer> tuples = new ArrayList<>();
             for (Map.Entry<String, String> entry : event.getDetails().entrySet()) {
                 int key = builder.createString(entry.getKey());
@@ -119,7 +119,7 @@ class SerialisationUtils {
         return builder.dataBuffer();
     }
 
-    static ByteBuffer toFlat(IdentifiedAdminEvent adminEvent){
+    static ByteBuffer toFlat(IdentifiedAdminEvent adminEvent) {
         FlatBufferBuilder builder = new FlatBufferBuilder(FLATBUFFER_INIT_SIZE);
 
         // uid
@@ -130,19 +130,19 @@ class SerialisationUtils {
 
         // RealmId
         int realmIdOffset = 0;
-        if (adminEvent.getRealmId() != null ){
+        if (adminEvent.getRealmId() != null) {
             realmIdOffset = builder.createString(adminEvent.getRealmId());
         }
 
         // AuthDetails
         int authDetailsOffset = 0;
-        if (adminEvent.getAuthDetails() != null){
+        if (adminEvent.getAuthDetails() != null) {
             int authDetailsRealmIdOffset = 0;
             int authDetailsClientIdOffset = 0;
             int authDetailsUserIdOffset = 0;
             int authDetailsIpAddressOffset = 0;
 
-            if (adminEvent.getAuthDetails().getRealmId() != null){
+            if (adminEvent.getAuthDetails().getRealmId() != null) {
                 authDetailsRealmIdOffset = builder.createString(adminEvent.getAuthDetails().getRealmId());
             }
 
@@ -166,7 +166,7 @@ class SerialisationUtils {
         // ResourceType
         byte resourceTypeOffset = 0;
         // size of the list minus 1 because we add UNKNOWN resource type in flatbuffers list
-        int resourceTypeSize = flatbuffers.events.ResourceType.names.length -1;
+        int resourceTypeSize = flatbuffers.events.ResourceType.names.length - 1;
 
         if (adminEvent.getResourceType() != null) {
             if (adminEvent.getResourceType().ordinal() < resourceTypeSize) {
@@ -179,25 +179,25 @@ class SerialisationUtils {
 
         // OperationType
         byte operationTypeOffset = 0;
-        if(adminEvent.getOperationType() != null){
+        if (adminEvent.getOperationType() != null) {
             operationTypeOffset = (byte) adminEvent.getOperationType().ordinal();
         }
 
         // ResourcePath
         int resourcePathOffset = 0;
-        if (adminEvent.getResourcePath() != null ) {
+        if (adminEvent.getResourcePath() != null) {
             resourcePathOffset = builder.createString(adminEvent.getResourcePath());
         }
 
         // Representation
         int representationOffset = 0;
-        if (adminEvent.getRepresentation() != null ) {
+        if (adminEvent.getRepresentation() != null) {
             representationOffset = builder.createString(adminEvent.getRepresentation());
         }
 
         // Error
         int errorOffset = 0;
-        if (adminEvent.getError() != null ) {
+        if (adminEvent.getError() != null) {
             errorOffset = builder.createString(adminEvent.getError());
         }
 
