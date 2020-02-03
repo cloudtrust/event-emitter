@@ -1,6 +1,7 @@
-package io.cloudtrust.keycloak.eventemitter;
+package io.cloudtrust.keycloak.customevent;
 
 
+import io.cloudtrust.keycloak.eventemitter.HasUid;
 import org.keycloak.events.Event;
 
 public class IdentifiedEvent extends Event implements HasUid {
@@ -17,7 +18,7 @@ public class IdentifiedEvent extends Event implements HasUid {
      * @param uid   for idempotence
      * @param event original event
      */
-    IdentifiedEvent(long uid, Event event) {
+    public IdentifiedEvent(long uid, Event event) {
         this.uid = uid;
 
         setTime(event.getTime());

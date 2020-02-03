@@ -2,6 +2,10 @@ package io.cloudtrust.keycloak.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
+import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
+import io.cloudtrust.keycloak.customevent.ExtendedAuthDetails;
+import io.cloudtrust.keycloak.customevent.IdentifiedAdminEvent;
+import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -21,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -49,7 +55,7 @@ public class EventEmitterProvider implements EventListenerProvider {
     private HttpClientContext httpContext;
     private IdGenerator idGenerator;
     private LinkedBlockingQueue<IdentifiedEvent> pendingEvents;
-    private LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents;
+    private LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents;
     private String targetUri;
     private String username;
     private String secretToken;
@@ -70,7 +76,7 @@ public class EventEmitterProvider implements EventListenerProvider {
                          CloseableHttpClient httpClient, IdGenerator idGenerator,
                          String targetUri, SerialisationFormat format,
                          LinkedBlockingQueue<IdentifiedEvent> pendingEvents,
-                         LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents) {
+                         LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents) {
         logger.debug("EventEmitterProvider constructor call");
         this.keycloakSession = keycloakSession;
         this.httpClient = httpClient;
@@ -126,8 +132,9 @@ public class EventEmitterProvider implements EventListenerProvider {
         logger.debugf("Pending AdminEvents to send stored in buffer: %d", pendingAdminEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
+        ExtendedAdminEvent customAdminEvent = completeAdminEventAttributes(identifiedAdminEvent);
 
-        while (!pendingAdminEvents.offer(identifiedAdminEvent)) {
+        while (!pendingAdminEvents.offer(customAdminEvent)) {
             AdminEvent skippedAdminEvent = pendingAdminEvents.poll();
             if (skippedAdminEvent != null) {
                 String strAdminEvent = null;
@@ -226,7 +233,7 @@ public class EventEmitterProvider implements EventListenerProvider {
     }
 
     private void completeEventAttributes(Event event) {
-        // add missing username
+        // add username if missing
         if (event.getDetails() == null) {
             event.setDetails(new HashMap<>());
         }
@@ -241,4 +248,35 @@ public class EventEmitterProvider implements EventListenerProvider {
         }
     }
 
+    private ExtendedAdminEvent completeAdminEventAttributes(IdentifiedAdminEvent adminEvent) {
+        ExtendedAdminEvent extendedAdminEvent = new ExtendedAdminEvent(adminEvent);
+        // add always missing agent username
+        ExtendedAuthDetails extendedAuthDetails = extendedAdminEvent.getAuthDetails();
+        if (!Strings.isNullOrEmpty(extendedAuthDetails.getUserId())) {
+            UserModel user = keycloakSession.users().getUserById(extendedAuthDetails.getUserId(),
+                    keycloakSession.realms().getRealm(extendedAuthDetails.getRealmId()));
+            extendedAuthDetails.setUsername(user.getUsername());
+        }
+        // add username if resource is a user
+        String resourcePath = extendedAdminEvent.getResourcePath();
+        if (resourcePath != null && resourcePath.startsWith("users")) {
+            // parse userID
+            String pattern = ".*([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
+            Pattern r = Pattern.compile(pattern);
+            Matcher m = r.matcher(resourcePath);
+            m.matches();
+            String userId = m.group(1);
+            if (!Strings.isNullOrEmpty(userId)) {
+                // retrieve user
+                UserModel user = keycloakSession.users().getUserById(userId,
+                        keycloakSession.realms().getRealm(adminEvent.getRealmId()));
+                extendedAdminEvent.getDetails().put("user_id", userId);
+                if (user != null) {
+                    extendedAdminEvent.getDetails().put("username", user.getUsername());
+                }
+            }
+        }
+
+        return extendedAdminEvent;
+    }
 }

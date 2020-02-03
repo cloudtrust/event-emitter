@@ -158,24 +158,24 @@ Main__main()
         xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[not(@name)]" -t attr -n 'name' -v 'eventsListener' $CONF_FILE
     fi
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']" -t elem -n provider $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider" -t attr -n name -v 'event-emitter' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider" -t attr -n enabled -v 'true' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider" -t elem -n properties $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[not(@*)]" -t attr -n name -v 'format' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='format']" -t attr -n value -v 'FLATBUFFER' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[not(@*)]" -t attr -n name -v 'targetUri' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='targetUri']" -t attr -n value -v "$argv__TARGET" $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[not(@*)]" -t attr -n name -v 'bufferCapacity' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='bufferCapacity']" -t attr -n value -v '10' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[not(@*)]" -t attr -n name -v 'keycloakId' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='keycloakId']" -t attr -n value -v '1' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[not(@*)]" -t attr -n name -v 'datacenterId' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider/c:properties/c:property[@name='datacenterId']" -t attr -n value -v '1' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[not(@name)]" -t attr -n name -v 'event-emitter' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']" -t attr -n enabled -v 'true' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']" -t elem -n properties $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'format' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='format']" -t attr -n value -v 'FLATBUFFER' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'targetUri' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='targetUri']" -t attr -n value -v "$argv__TARGET" $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'bufferCapacity' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='bufferCapacity']" -t attr -n value -v '10' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'keycloakId' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='keycloakId']" -t attr -n value -v '1' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'datacenterId' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='datacenterId']" -t attr -n value -v '1' $CONF_FILE
 
     exit 0
 }
