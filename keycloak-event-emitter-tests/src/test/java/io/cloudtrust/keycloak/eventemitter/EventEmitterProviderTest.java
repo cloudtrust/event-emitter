@@ -2,6 +2,8 @@ package io.cloudtrust.keycloak.eventemitter;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
+import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
@@ -91,7 +93,7 @@ public class EventEmitterProviderTest {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
                 idGenerator, TARGET, SerialisationFormat.FLATBUFFER, pendingEvents, pendingAdminEvents);
 
@@ -121,7 +123,7 @@ public class EventEmitterProviderTest {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
                 idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
 
@@ -144,7 +146,7 @@ public class EventEmitterProviderTest {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
                 idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
 
@@ -171,7 +173,7 @@ public class EventEmitterProviderTest {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
                 idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
 
@@ -199,7 +201,7 @@ public class EventEmitterProviderTest {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
                 idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
 

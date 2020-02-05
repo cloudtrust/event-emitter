@@ -46,7 +46,7 @@ public abstract class AbstractTest {
     private KeycloakTestingClient testingClient = KeycloakTestingClient.getInstance(KEYCLOAK_URL);
 
     protected static Undertow server;
-    protected static final int LISTEN_PORT = 8888;
+    protected static final int LISTEN_PORT = 9999;
     protected static final String KEYCLOAK_URL = getKeycloakUrl();
     private static final String MODULE_NAME_WAR = "event-emitter.war";
 

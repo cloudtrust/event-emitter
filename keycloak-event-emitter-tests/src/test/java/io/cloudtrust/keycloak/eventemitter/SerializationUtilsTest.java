@@ -1,6 +1,9 @@
 package io.cloudtrust.keycloak.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
+import io.cloudtrust.keycloak.customevent.IdentifiedAdminEvent;
+import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.Event;
@@ -23,7 +26,6 @@ public class SerializationUtilsTest {
     @Test
     public void testContainerToJson() {
         Container c = new Container("Event", "obj");
-
         try {
             String jsonEvent = SerialisationUtils.toJson(c);
             Assert.assertEquals("{\"type\":\"Event\",\"obj\":\"obj\"}", jsonEvent);
@@ -64,10 +66,9 @@ public class SerializationUtilsTest {
 
     @Test
     public void testAdminEventToJson() {
-        AdminEvent event = createAdminEvent();
         try {
-            String jsonEvent = SerialisationUtils.toJson(new IdentifiedAdminEvent(UID, event));
-            Assert.assertEquals("{\"time\":120000,\"realmId\":\"realmId\",\"authDetails\":{\"realmId\":\"authDetails-realmId\",\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\"},\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\",\"uid\":123456789}", jsonEvent);
+            String jsonEvent = SerialisationUtils.toJson(createExtendedAdminEvent());
+            Assert.assertEquals("{\"time\":120000,\"realmId\":\"realmId\",\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\",\"uid\":123456789,\"extAuthDetails\":{\"realmId\":\"authDetails-realmId\",\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\",\"username\":\"authDetails-username\"},\"details\":{\"user_id\":\"userid\",\"username\":\"username\"}}", jsonEvent);
         } catch (JsonProcessingException e) {
             Assert.fail();
         }
@@ -75,10 +76,9 @@ public class SerializationUtilsTest {
 
     @Test
     public void testMinimalAdminEventToJson() {
-        AdminEvent event = createMinimalAdminEvent();
         try {
-            String jsonEvent = SerialisationUtils.toJson(new IdentifiedAdminEvent(UID, event));
-            Assert.assertEquals("{\"time\":120000,\"realmId\":null,\"authDetails\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null,\"uid\":123456789}", jsonEvent);
+            String jsonEvent = SerialisationUtils.toJson(createMinimalExtendedAdminEvent());
+            Assert.assertEquals("{\"time\":120000,\"realmId\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null,\"uid\":123456789,\"extAuthDetails\":null,\"details\":{}}", jsonEvent);
         } catch (JsonProcessingException e) {
             Assert.fail();
         }
@@ -104,8 +104,8 @@ public class SerializationUtilsTest {
 
     @Test
     public void testAdminEventToFlatbuffers() {
-        AdminEvent adminEvent = createAdminEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedAdminEvent(UID, adminEvent));
+        ExtendedAdminEvent adminEvent = createExtendedAdminEvent();
+        ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
         Assert.assertTrue(equals(adminEvent, deserializedAdminEvent));
         Assert.assertEquals(UID, deserializedAdminEvent.uid());
@@ -113,8 +113,8 @@ public class SerializationUtilsTest {
 
     @Test
     public void testMinimalAdminEventToFlatbuffers() {
-        AdminEvent adminEvent = createMinimalAdminEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedAdminEvent(UID, adminEvent));
+        ExtendedAdminEvent adminEvent = createMinimalExtendedAdminEvent();
+        ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
         Assert.assertTrue(equals(adminEvent, deserializedAdminEvent));
         Assert.assertEquals(UID, deserializedAdminEvent.uid());
@@ -145,6 +145,15 @@ public class SerializationUtilsTest {
         return event;
     }
 
+    private ExtendedAdminEvent createExtendedAdminEvent() {
+        IdentifiedAdminEvent iae = new IdentifiedAdminEvent(UID, createAdminEvent());
+        ExtendedAdminEvent eae = new ExtendedAdminEvent(iae);
+        eae.getAuthDetails().setUsername("authDetails-username");
+        eae.getDetails().put("user_id", "userid");
+        eae.getDetails().put("username", "username");
+        return eae;
+    }
+
     private AdminEvent createAdminEvent() {
         AdminEvent adminEvent = new AdminEvent();
         adminEvent.setTime(120000);
@@ -161,6 +170,11 @@ public class SerializationUtilsTest {
         adminEvent.setRepresentation("representation");
         adminEvent.setError("error");
         return adminEvent;
+    }
+
+    private ExtendedAdminEvent createMinimalExtendedAdminEvent() {
+        IdentifiedAdminEvent iae = new IdentifiedAdminEvent(UID, createMinimalAdminEvent());
+        return new ExtendedAdminEvent(iae);
     }
 
     private AdminEvent createMinimalAdminEvent() {
@@ -213,7 +227,7 @@ public class SerializationUtilsTest {
         return true;
     }
 
-    private boolean equals(AdminEvent adminEvent, flatbuffers.events.AdminEvent adminEventFlat) {
+    private boolean equals(ExtendedAdminEvent adminEvent, flatbuffers.events.AdminEvent adminEventFlat) {
         if (adminEvent.getTime() != adminEventFlat.time()) {
             return false;
         }
@@ -228,6 +242,9 @@ public class SerializationUtilsTest {
             }
         } else {
             if (!Objects.equals(adminEvent.getAuthDetails().getUserId(), adminEventFlat.authDetails().userId())) {
+                return false;
+            }
+            if (!Objects.equals(adminEvent.getAuthDetails().getUsername(), adminEventFlat.authDetails().username())) {
                 return false;
             }
             if (!Objects.equals(adminEvent.getAuthDetails().getClientId(), adminEventFlat.authDetails().clientId())) {
@@ -262,6 +279,15 @@ public class SerializationUtilsTest {
         }
 
         if (!Objects.equals(adminEvent.getRepresentation(), adminEventFlat.representation())) {
+            return false;
+        }
+
+
+        if (adminEvent.getDetails() == null) {
+            if (adminEventFlat.detailsLength() != 0) {
+                return false;
+            }
+        } else if (adminEvent.getDetails().size() != adminEventFlat.detailsLength()) {
             return false;
         }
 

@@ -1,6 +1,7 @@
-package io.cloudtrust.keycloak.eventemitter;
+package io.cloudtrust.keycloak.customevent;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.cloudtrust.keycloak.eventemitter.HasUid;
 import org.keycloak.events.admin.AdminEvent;
 
 public class IdentifiedAdminEvent extends AdminEvent implements HasUid {
@@ -13,7 +14,7 @@ public class IdentifiedAdminEvent extends AdminEvent implements HasUid {
      * @param uid        for idempotence
      * @param adminEvent original adminEvent
      */
-    IdentifiedAdminEvent(long uid, AdminEvent adminEvent) {
+    public IdentifiedAdminEvent(long uid, AdminEvent adminEvent) {
         this.uid = uid;
 
         setTime(adminEvent.getTime());

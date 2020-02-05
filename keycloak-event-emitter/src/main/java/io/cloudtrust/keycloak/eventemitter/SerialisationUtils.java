@@ -3,6 +3,8 @@ package io.cloudtrust.keycloak.eventemitter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.flatbuffers.FlatBufferBuilder;
+import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
+import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -119,7 +121,7 @@ class SerialisationUtils {
         return builder.dataBuffer();
     }
 
-    static ByteBuffer toFlat(IdentifiedAdminEvent adminEvent) {
+    static ByteBuffer toFlat(ExtendedAdminEvent adminEvent) {
         FlatBufferBuilder builder = new FlatBufferBuilder(FLATBUFFER_INIT_SIZE);
 
         // uid
@@ -140,6 +142,7 @@ class SerialisationUtils {
             int authDetailsRealmIdOffset = 0;
             int authDetailsClientIdOffset = 0;
             int authDetailsUserIdOffset = 0;
+            int authDetailsUsernameAddressOffset = 0;
             int authDetailsIpAddressOffset = 0;
 
             if (adminEvent.getAuthDetails().getRealmId() != null) {
@@ -154,13 +157,18 @@ class SerialisationUtils {
                 authDetailsUserIdOffset = builder.createString(adminEvent.getAuthDetails().getUserId());
             }
 
+            if (adminEvent.getAuthDetails().getUsername() != null) {
+                authDetailsUsernameAddressOffset = builder.createString(adminEvent.getAuthDetails().getUsername());
+            }
+
             if (adminEvent.getAuthDetails().getIpAddress() != null) {
                 authDetailsIpAddressOffset = builder.createString(adminEvent.getAuthDetails().getIpAddress());
             }
 
             authDetailsOffset = flatbuffers.events.AuthDetails.createAuthDetails(builder,
                     authDetailsRealmIdOffset, authDetailsClientIdOffset,
-                    authDetailsUserIdOffset, authDetailsIpAddressOffset);
+                    authDetailsUserIdOffset, authDetailsUsernameAddressOffset,
+                    authDetailsIpAddressOffset);
         }
 
         // ResourceType
@@ -195,6 +203,25 @@ class SerialisationUtils {
             representationOffset = builder.createString(adminEvent.getRepresentation());
         }
 
+        // Details
+        int detailsVec = 0;
+        if (adminEvent.getDetails() != null) {
+            List<Integer> tuples = new ArrayList<>();
+            for (Map.Entry<String, String> entry : adminEvent.getDetails().entrySet()) {
+                int key = builder.createString(entry.getKey());
+                int value = builder.createString(entry.getValue());
+                int tuple = flatbuffers.events.Tuple.createTuple(builder, key, value);
+                tuples.add(tuple);
+            }
+
+            int[] details = new int[tuples.size()];
+            for (int i = 0; i < tuples.size(); i++) {
+                details[i] = tuples.get(i);
+            }
+
+            detailsVec = flatbuffers.events.Event.createDetailsVector(builder, details);
+        }
+
         // Error
         int errorOffset = 0;
         if (adminEvent.getError() != null) {
@@ -211,6 +238,7 @@ class SerialisationUtils {
         flatbuffers.events.AdminEvent.addOperationType(builder, operationTypeOffset);
         flatbuffers.events.AdminEvent.addResourcePath(builder, resourcePathOffset);
         flatbuffers.events.AdminEvent.addRepresentation(builder, representationOffset);
+        flatbuffers.events.AdminEvent.addDetails(builder, detailsVec);
         flatbuffers.events.AdminEvent.addError(builder, errorOffset);
 
         int flatAdminEvent = flatbuffers.events.AdminEvent.endAdminEvent(builder);

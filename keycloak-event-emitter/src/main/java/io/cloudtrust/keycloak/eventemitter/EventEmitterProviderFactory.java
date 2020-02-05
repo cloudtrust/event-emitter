@@ -1,5 +1,7 @@
 package io.cloudtrust.keycloak.eventemitter;
 
+import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
+import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -51,7 +53,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     private CloseableHttpClient httpClient;
     private IdGenerator idGenerator;
     private LinkedBlockingQueue<IdentifiedEvent> pendingEventsToSend;
-    private LinkedBlockingQueue<IdentifiedAdminEvent> pendingAdminEventsToSend;
+    private LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEventsToSend;
 
 
     public EventListenerProvider create(KeycloakSession keycloakSession) {

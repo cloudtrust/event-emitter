@@ -2,6 +2,7 @@ package io.cloudtrust.keycloak.eventemitter;
 
 import com.google.gson.Gson;
 import io.cloudtrust.keycloak.AbstractTest;
+import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.logging.Logger;
@@ -17,6 +18,9 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+
+import javax.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -49,7 +53,7 @@ public class MessageGenerationItTest extends AbstractTest {
      * Simulate login, and expect the event emitter to report this event
      */
     @Test
-    public void testLoginEventReporting() throws Exception {
+    public void testLoginEventReporting() throws InterruptedException {
         int nbLoginEvents = 0;
         Keycloak keycloak = Keycloak.getInstance(KEYCLOAK_URL, "master", "admin", "admin", CLIENT);
 
@@ -70,7 +74,7 @@ public class MessageGenerationItTest extends AbstractTest {
      * Simulate logout, and expect the event emitter to report this event
      */
     @Test
-    public void testLogoutEventReporting() throws Exception {
+    public void testLogoutEventReporting() {
         loginPage.open();
         loginPage.login("test.user", "password");
         EventRepresentation event = pollEvent();
@@ -82,5 +86,27 @@ public class MessageGenerationItTest extends AbstractTest {
         assertThat(event.getUserId(), is(not(nullValue())));
         assertThat(event.getDetails().get(Details.USERNAME), is("test.user"));
         assertThat(pollEvent(), is(nullValue()));
+    }
+
+
+    /**
+     * Simulate user creation and check that the username of the user created appears
+     * in the event, as well as the username of the agent creating the user
+     */
+    @Test
+    public void testCreateUserEventReporting() throws InterruptedException {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("test_user_creation");
+        Response rsp = keycloak.realm("test").users().create(user);
+        assertThat(rsp.getStatus(), is(201));
+
+        // wait for the event to be reported
+        Thread.sleep(1000);
+        String jsonAsString = handler.toString();
+        Gson g = new Gson();
+        ExtendedAdminEvent e = g.fromJson(jsonAsString, ExtendedAdminEvent.class);
+        assertThat(e.getAuthDetails().getUsername(), is("admin"));
+        assertThat(e.getDetails().get("user_id"), is(not(nullValue())));
+        assertThat(e.getDetails().get("username"), is("test_user_creation"));
     }
 }

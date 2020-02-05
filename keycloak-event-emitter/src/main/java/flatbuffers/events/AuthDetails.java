@@ -23,28 +23,34 @@ public final class AuthDetails extends Table {
   public String userId() { int o = __offset(8); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer userIdAsByteBuffer() { return __vector_as_bytebuffer(8, 1); }
   public ByteBuffer userIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 8, 1); }
-  public String ipAddress() { int o = __offset(10); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer ipAddressAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
-  public ByteBuffer ipAddressInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 10, 1); }
+  public String username() { int o = __offset(10); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer usernameAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
+  public ByteBuffer usernameInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 10, 1); }
+  public String ipAddress() { int o = __offset(12); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer ipAddressAsByteBuffer() { return __vector_as_bytebuffer(12, 1); }
+  public ByteBuffer ipAddressInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 12, 1); }
 
   public static int createAuthDetails(FlatBufferBuilder builder,
       int realmIdOffset,
       int clientIdOffset,
       int userIdOffset,
+      int usernameOffset,
       int ipAddressOffset) {
-    builder.startObject(4);
+    builder.startObject(5);
     AuthDetails.addIpAddress(builder, ipAddressOffset);
+    AuthDetails.addUsername(builder, usernameOffset);
     AuthDetails.addUserId(builder, userIdOffset);
     AuthDetails.addClientId(builder, clientIdOffset);
     AuthDetails.addRealmId(builder, realmIdOffset);
     return AuthDetails.endAuthDetails(builder);
   }
 
-  public static void startAuthDetails(FlatBufferBuilder builder) { builder.startObject(4); }
+  public static void startAuthDetails(FlatBufferBuilder builder) { builder.startObject(5); }
   public static void addRealmId(FlatBufferBuilder builder, int realmIdOffset) { builder.addOffset(0, realmIdOffset, 0); }
   public static void addClientId(FlatBufferBuilder builder, int clientIdOffset) { builder.addOffset(1, clientIdOffset, 0); }
   public static void addUserId(FlatBufferBuilder builder, int userIdOffset) { builder.addOffset(2, userIdOffset, 0); }
-  public static void addIpAddress(FlatBufferBuilder builder, int ipAddressOffset) { builder.addOffset(3, ipAddressOffset, 0); }
+  public static void addUsername(FlatBufferBuilder builder, int usernameOffset) { builder.addOffset(3, usernameOffset, 0); }
+  public static void addIpAddress(FlatBufferBuilder builder, int ipAddressOffset) { builder.addOffset(4, ipAddressOffset, 0); }
   public static int endAuthDetails(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

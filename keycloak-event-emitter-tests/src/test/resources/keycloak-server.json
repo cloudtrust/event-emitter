@@ -1,6 +1,6 @@
 {
   "hostname": {
-    "provider": "request",
+    "provider": "default",
     "fixed": {
       "hostname": "localhost",
       "httpPort": "-1",
@@ -20,7 +20,7 @@
     },
     "event-emitter": {
       "format": "JSON",
-      "targetUri": "http://localhost:8888/event/receiver",
+      "targetUri": "http://localhost:9999/event/receiver",
       "bufferCapacity": 1,
       "keycloakId": 1,
       "datacenterId": 1

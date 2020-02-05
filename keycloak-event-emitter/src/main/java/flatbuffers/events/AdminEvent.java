@@ -21,34 +21,39 @@ public final class AdminEvent extends Table {
   public ByteBuffer realmIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 8, 1); }
   public AuthDetails authDetails() { return authDetails(new AuthDetails()); }
   public AuthDetails authDetails(AuthDetails obj) { int o = __offset(10); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
-  public byte resourceType() { int o = __offset(12); return o != 0 ? bb.get(o + bb_pos) : 0; }
-  public byte operationType() { int o = __offset(14); return o != 0 ? bb.get(o + bb_pos) : 0; }
-  public String resourcePath() { int o = __offset(16); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer resourcePathAsByteBuffer() { return __vector_as_bytebuffer(16, 1); }
-  public ByteBuffer resourcePathInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 16, 1); }
-  public String representation() { int o = __offset(18); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer representationAsByteBuffer() { return __vector_as_bytebuffer(18, 1); }
-  public ByteBuffer representationInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 18, 1); }
-  public String error() { int o = __offset(20); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer errorAsByteBuffer() { return __vector_as_bytebuffer(20, 1); }
-  public ByteBuffer errorInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 20, 1); }
+  public Tuple details(int j) { return details(new Tuple(), j); }
+  public Tuple details(Tuple obj, int j) { int o = __offset(12); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
+  public int detailsLength() { int o = __offset(12); return o != 0 ? __vector_len(o) : 0; }
+  public byte resourceType() { int o = __offset(14); return o != 0 ? bb.get(o + bb_pos) : 0; }
+  public byte operationType() { int o = __offset(16); return o != 0 ? bb.get(o + bb_pos) : 0; }
+  public String resourcePath() { int o = __offset(18); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer resourcePathAsByteBuffer() { return __vector_as_bytebuffer(18, 1); }
+  public ByteBuffer resourcePathInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 18, 1); }
+  public String representation() { int o = __offset(20); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer representationAsByteBuffer() { return __vector_as_bytebuffer(20, 1); }
+  public ByteBuffer representationInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 20, 1); }
+  public String error() { int o = __offset(22); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer errorAsByteBuffer() { return __vector_as_bytebuffer(22, 1); }
+  public ByteBuffer errorInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 22, 1); }
 
   public static int createAdminEvent(FlatBufferBuilder builder,
       long uid,
       long time,
       int realmIdOffset,
       int authDetailsOffset,
+      int detailsOffset,
       byte resourceType,
       byte operationType,
       int resourcePathOffset,
       int representationOffset,
       int errorOffset) {
-    builder.startObject(9);
+    builder.startObject(10);
     AdminEvent.addTime(builder, time);
     AdminEvent.addUid(builder, uid);
     AdminEvent.addError(builder, errorOffset);
     AdminEvent.addRepresentation(builder, representationOffset);
     AdminEvent.addResourcePath(builder, resourcePathOffset);
+    AdminEvent.addDetails(builder, detailsOffset);
     AdminEvent.addAuthDetails(builder, authDetailsOffset);
     AdminEvent.addRealmId(builder, realmIdOffset);
     AdminEvent.addOperationType(builder, operationType);
@@ -56,16 +61,19 @@ public final class AdminEvent extends Table {
     return AdminEvent.endAdminEvent(builder);
   }
 
-  public static void startAdminEvent(FlatBufferBuilder builder) { builder.startObject(9); }
+  public static void startAdminEvent(FlatBufferBuilder builder) { builder.startObject(10); }
   public static void addUid(FlatBufferBuilder builder, long uid) { builder.addLong(0, uid, 0L); }
   public static void addTime(FlatBufferBuilder builder, long time) { builder.addLong(1, time, 0L); }
   public static void addRealmId(FlatBufferBuilder builder, int realmIdOffset) { builder.addOffset(2, realmIdOffset, 0); }
   public static void addAuthDetails(FlatBufferBuilder builder, int authDetailsOffset) { builder.addOffset(3, authDetailsOffset, 0); }
-  public static void addResourceType(FlatBufferBuilder builder, byte resourceType) { builder.addByte(4, resourceType, 0); }
-  public static void addOperationType(FlatBufferBuilder builder, byte operationType) { builder.addByte(5, operationType, 0); }
-  public static void addResourcePath(FlatBufferBuilder builder, int resourcePathOffset) { builder.addOffset(6, resourcePathOffset, 0); }
-  public static void addRepresentation(FlatBufferBuilder builder, int representationOffset) { builder.addOffset(7, representationOffset, 0); }
-  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(8, errorOffset, 0); }
+  public static void addDetails(FlatBufferBuilder builder, int detailsOffset) { builder.addOffset(4, detailsOffset, 0); }
+  public static int createDetailsVector(FlatBufferBuilder builder, int[] data) { builder.startVector(4, data.length, 4); for (int i = data.length - 1; i >= 0; i--) builder.addOffset(data[i]); return builder.endVector(); }
+  public static void startDetailsVector(FlatBufferBuilder builder, int numElems) { builder.startVector(4, numElems, 4); }
+  public static void addResourceType(FlatBufferBuilder builder, byte resourceType) { builder.addByte(5, resourceType, 0); }
+  public static void addOperationType(FlatBufferBuilder builder, byte operationType) { builder.addByte(6, operationType, 0); }
+  public static void addResourcePath(FlatBufferBuilder builder, int resourcePathOffset) { builder.addOffset(7, resourcePathOffset, 0); }
+  public static void addRepresentation(FlatBufferBuilder builder, int representationOffset) { builder.addOffset(8, representationOffset, 0); }
+  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(9, errorOffset, 0); }
   public static int endAdminEvent(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;
