@@ -261,12 +261,11 @@ public class EventEmitterProvider implements EventListenerProvider {
         String resourcePath = extendedAdminEvent.getResourcePath();
         if (resourcePath != null && resourcePath.startsWith("users")) {
             // parse userID
-            String pattern = ".*([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
+            String pattern = "^users/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$";
             Pattern r = Pattern.compile(pattern);
             Matcher m = r.matcher(resourcePath);
-            m.matches();
-            String userId = m.group(1);
-            if (!Strings.isNullOrEmpty(userId)) {
+            if (m.matches()) {
+                String userId = m.group(1);
                 // retrieve user
                 UserModel user = keycloakSession.users().getUserById(userId,
                         keycloakSession.realms().getRealm(adminEvent.getRealmId()));

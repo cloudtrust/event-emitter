@@ -98,6 +98,9 @@ public class MessageGenerationItTest extends AbstractTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("test_user_creation");
         Response rsp = keycloak.realm("test").users().create(user);
+        String loc = rsp.getHeaderString("Location");
+        String createdUserId = loc.substring(loc.lastIndexOf("/")+1);
+
         assertThat(rsp.getStatus(), is(201));
 
         // wait for the event to be reported
@@ -106,7 +109,7 @@ public class MessageGenerationItTest extends AbstractTest {
         Gson g = new Gson();
         ExtendedAdminEvent e = g.fromJson(jsonAsString, ExtendedAdminEvent.class);
         assertThat(e.getAuthDetails().getUsername(), is("admin"));
-        assertThat(e.getDetails().get("user_id"), is(not(nullValue())));
+        assertThat(e.getDetails().get("user_id"), is(createdUserId));
         assertThat(e.getDetails().get("username"), is("test_user_creation"));
     }
 }
