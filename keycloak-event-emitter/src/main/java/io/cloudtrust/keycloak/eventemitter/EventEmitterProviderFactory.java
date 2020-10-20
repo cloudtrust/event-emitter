@@ -3,6 +3,9 @@ package io.cloudtrust.keycloak.eventemitter;
 import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
 import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
+
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.jboss.logging.Logger;
@@ -17,6 +20,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.IntConsumer;
 
 /**
  * Factory for EventEmitterProvider.
@@ -42,13 +46,16 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
     private static final String BUFFER_CAPACITY_CONFIG_KEY = "bufferCapacity";
     private static final String SNOWFLAKE_KEYCLOAKID_CONFIG_KEY = "keycloakId";
     private static final String SNOWFLAKE_DATACENTERID_CONFIG_KEY = "datacenterId";
+    private static final String CONNECT_TIMEOUT_MILLIS = "connectTimeoutMillis";
+    private static final String CONNECTION_REQUEST_TIMEOUT_MILLIS = "connectionRequestTimeoutMillis";
+    private static final String SOCKET_TIMEOUT_MILLIS = "socketTimeoutMillis";
 
     private String targetUri;
     private SerialisationFormat format;
     private Integer bufferCapacity;
     private Integer keycloakId;
     private Integer datacenterId;
-
+    private RequestConfig requestConfig;
 
     private CloseableHttpClient httpClient;
     private IdGenerator idGenerator;
@@ -60,7 +67,7 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
         logger.debug("EventEmitterProviderFactory creation");
 
         return new EventEmitterProvider(keycloakSession, httpClient, idGenerator, targetUri,
-                format, pendingEventsToSend, pendingAdminEventsToSend);
+                format, pendingEventsToSend, pendingAdminEventsToSend, requestConfig);
     }
 
     public void init(Config.Scope config) {
@@ -90,52 +97,49 @@ public class EventEmitterProviderFactory implements EventListenerProviderFactory
         }
 
         // Buffer capacity
-        try {
-            bufferCapacity = config.getInt(BUFFER_CAPACITY_CONFIG_KEY);
-        } catch (NumberFormatException e) {
-            logger.errorv(e, "Invalid buffer capacity configuration parameter");
-            throw e;
-        }
-
-        if (bufferCapacity == null) {
-            logger.error("Buffer capacity configuration is missing");
-            throw new IllegalArgumentException("Buffer capacity configuration is missing");
-        }
+        bufferCapacity = getIntConfig(config, BUFFER_CAPACITY_CONFIG_KEY, true);
 
         // Snowflake ID generator configuration
         // KeycloakId
-        try {
-            keycloakId = config.getInt(SNOWFLAKE_KEYCLOAKID_CONFIG_KEY);
-        } catch (NumberFormatException e) {
-            logger.errorv(e, "Invalid KeycloakId configuration parameter");
-            throw e;
-        }
-
-        if (keycloakId == null) {
-            logger.error("KeycloakId configuration is missing");
-            throw new IllegalArgumentException("KeycloakId configuration is missing");
-        }
+        keycloakId = getIntConfig(config, SNOWFLAKE_KEYCLOAKID_CONFIG_KEY, true);
 
         // DatacenterId
-        try {
-            datacenterId = config.getInt(SNOWFLAKE_DATACENTERID_CONFIG_KEY);
-        } catch (NumberFormatException e) {
-            logger.errorv(e, "Invalid datacenterId configuration parameter");
-            throw e;
-        }
+        datacenterId = getIntConfig(config, SNOWFLAKE_DATACENTERID_CONFIG_KEY, true);
 
-        if (datacenterId == null) {
-            logger.error("DatacenterId configuration is missing");
-            throw new IllegalArgumentException("DatacenterId configuration is missing");
-        }
-
+        // Creates request configuration
+        Builder requestConfigBuilder = RequestConfig.custom();
+        applyValueWhenDefined(config, CONNECT_TIMEOUT_MILLIS, requestConfigBuilder::setConnectTimeout);
+        applyValueWhenDefined(config, CONNECTION_REQUEST_TIMEOUT_MILLIS, requestConfigBuilder::setConnectionRequestTimeout);
+        applyValueWhenDefined(config, SOCKET_TIMEOUT_MILLIS, requestConfigBuilder::setSocketTimeout);
+        this.requestConfig = requestConfigBuilder.build();
 
         // Initialisation
         httpClient = HttpClients.createDefault();
         idGenerator = new IdGenerator(keycloakId, datacenterId);
         pendingEventsToSend = new LinkedBlockingQueue<>(bufferCapacity);
         pendingAdminEventsToSend = new LinkedBlockingQueue<>(bufferCapacity);
+    }
 
+    private void applyValueWhenDefined(Config.Scope config, String name, IntConsumer consumer) {
+        Integer value = getIntConfig(config, name, false);
+        if (value!=null) {
+            consumer.accept(value);
+        }
+    }
+
+    private Integer getIntConfig(Config.Scope config, String name, boolean mandatory) {
+        try {
+            Integer value = config.getInt(name);
+            if (value==null && mandatory) {
+                String message = name+" configuration is missing";
+                logger.errorf(message);
+                throw new IllegalArgumentException(message);
+            }
+            return value;
+        } catch (NumberFormatException e) {
+            logger.errorv(e, "Invalid %s configuration parameter", name);
+            throw e;
+        }
     }
 
     public void postInit(KeycloakSessionFactory keycloakSessionFactory) {

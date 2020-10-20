@@ -95,7 +95,7 @@ public class EventEmitterProviderTest {
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
-                idGenerator, TARGET, SerialisationFormat.FLATBUFFER, pendingEvents, pendingAdminEvents);
+                idGenerator, TARGET, SerialisationFormat.FLATBUFFER, pendingEvents, pendingAdminEvents, null);
 
         Event event = createEvent();
         eventEmitterProvider.onEvent(event);
@@ -125,7 +125,7 @@ public class EventEmitterProviderTest {
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
+                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents, null);
 
         Event event = createEvent();
         eventEmitterProvider.onEvent(event);
@@ -148,7 +148,7 @@ public class EventEmitterProviderTest {
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
+                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents, null);
 
         Assert.assertEquals(0, pendingEvents.size());
 
@@ -175,7 +175,7 @@ public class EventEmitterProviderTest {
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
+                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents, null);
 
 
         Assert.assertEquals(0, pendingEvents.size());
@@ -203,7 +203,7 @@ public class EventEmitterProviderTest {
         LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
         EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents);
+                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents, null);
 
         Assert.assertEquals(0, pendingEvents.size());
 

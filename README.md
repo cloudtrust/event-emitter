@@ -68,7 +68,10 @@ In __standalone.xml__, add the new module and configure it
                <property name="bufferCapacity" value="10"/>
                <property name="keycloakId" value="1"/>
                <property name="datacenterId" value="1"/>
-            </properties>   
+               <property name="connectTimeoutMillis" value="500"/>
+               <property name="connectionRequestTimeoutMillis" value="500"/>
+               <property name="socketTimeoutMillis" value="500"/>
+            </properties>
         </provider>
     </spi>
     <!--[...]-->
@@ -81,6 +84,9 @@ Configuration parameters:
 * bufferCapacity: window size of events kept in memory if failure occurs
 * keycloakId: configuration parameter for snowflake unique ID generation, id of the keycloak instance
 * datacenterId: configuration parameter for snowflake unique ID generation, id of the datacenter
+* connectTimeoutMillis: timeout in milliseconds until a connection is established. Parameter is optional
+* connectionRequestTimeoutMillis: timeout in milliseconds used when requesting a connection from the connection manager. Parameter is optional
+* socketTimeoutMillis: socket timeout (SO_TIMEOUT) in milliseconds. Parameter is optional
 
 For FLATBUFFER format, the serialized event in wrapped in a JSON to transmit type information. The wrapper has two keys, 'type' which is 'Event' or 'AdminEvent' and 'obj' which is the flatbuffer in base64 format.
 
