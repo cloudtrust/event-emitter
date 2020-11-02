@@ -7,6 +7,8 @@ import io.cloudtrust.keycloak.customevent.ExtendedAuthDetails;
 import io.cloudtrust.keycloak.customevent.IdentifiedAdminEvent;
 import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
+
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -60,6 +62,7 @@ public class EventEmitterProvider implements EventListenerProvider {
     private String username;
     private String secretToken;
     private SerialisationFormat format;
+    private RequestConfig requestConfig;
 
     /**
      * Constructor.
@@ -71,12 +74,14 @@ public class EventEmitterProvider implements EventListenerProvider {
      * @param format             of the serialized events
      * @param pendingEvents      to send due to failure during previous trial
      * @param pendingAdminEvents to send due to failure during previous trial
+     * @param requestConfig      configuration used for HTTP calls
      */
     EventEmitterProvider(KeycloakSession keycloakSession,
                          CloseableHttpClient httpClient, IdGenerator idGenerator,
                          String targetUri, SerialisationFormat format,
                          LinkedBlockingQueue<IdentifiedEvent> pendingEvents,
-                         LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents) {
+                         LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents,
+                         RequestConfig requestConfig) {
         logger.debug("EventEmitterProvider constructor call");
         this.keycloakSession = keycloakSession;
         this.httpClient = httpClient;
@@ -86,6 +91,7 @@ public class EventEmitterProvider implements EventListenerProvider {
         this.format = format;
         this.pendingEvents = pendingEvents;
         this.pendingAdminEvents = pendingAdminEvents;
+        this.requestConfig = requestConfig;
 
         // Secret token
         secretToken = checkEnv(KEYCLOAK_BRIDGE_SECRET_TOKEN);
@@ -174,7 +180,7 @@ public class EventEmitterProvider implements EventListenerProvider {
             T event = queue.poll();
 
             if (event == null) {
-                break;
+                return;
             }
 
             try {
@@ -183,7 +189,7 @@ public class EventEmitterProvider implements EventListenerProvider {
                 String repushed = queue.offer(event) ? "success" : "failure";
                 logger.infof("Failed to send %s(ID=%s), try again later. Re-push: %s", event.getClass().getName(), event.getUid(), repushed);
                 logger.debug("Failed to serialize or send event", e);
-                break;
+                return;
             }
         }
     }
@@ -210,6 +216,8 @@ public class EventEmitterProvider implements EventListenerProvider {
 
     private void sendJson(String json) throws IOException, EventEmitterException {
         HttpPost httpPost = new HttpPost(targetUri);
+        httpPost.setConfig(requestConfig);
+
         StringEntity stringEntity = new StringEntity(json);
         httpPost.setEntity(stringEntity);
         httpPost.setHeader("Content-type", "application/json");

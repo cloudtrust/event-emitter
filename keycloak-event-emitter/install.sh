@@ -22,7 +22,7 @@ init()
 
     #optional args
     argv__CLUSTER=0
-    argv__TARGET="http://localhost:8888/event/receiver"
+    argv__TARGET="http://localhost:8811/event/receiver"
     argv__UNINSTALL=0
     getopt_results=$(getopt -s bash -o ct:u --long cluster,target:,uninstall -- "$@")
 
@@ -176,6 +176,15 @@ Main__main()
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'datacenterId' $CONF_FILE
     xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='datacenterId']" -t attr -n value -v '1' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'connectTimeoutMillis' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='connectTimeoutMillis']" -t attr -n value -v '500' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'connectionRequestTimeoutMillis' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='connectionRequestTimeoutMillis']" -t attr -n value -v '500' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'socketTimeoutMillis' $CONF_FILE
+    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='socketTimeoutMillis']" -t attr -n value -v '500' $CONF_FILE
 
     exit 0
 }
