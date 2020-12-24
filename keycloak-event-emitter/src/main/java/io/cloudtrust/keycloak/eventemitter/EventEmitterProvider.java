@@ -20,6 +20,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import java.io.IOException;
@@ -165,11 +166,12 @@ public class EventEmitterProvider implements EventListenerProvider {
             case FLATBUFFER:
                 sendEventsWithFlatbufferFormat();
                 break;
-            default:
-                logger.infov("Unknown format type (%s), JSON will be used", format.name());
             case JSON:
                 sendEventsWithJsonFormat();
                 break;
+            default:
+                logger.infov("Unknown format type (%s), JSON will be used", format.name());
+                sendEventsWithJsonFormat();
         }
     }
 
@@ -245,11 +247,11 @@ public class EventEmitterProvider implements EventListenerProvider {
         if (event.getDetails() == null) {
             event.setDetails(new HashMap<>());
         }
-        String username = event.getDetails().get(Details.USERNAME);
-        if (!Strings.isNullOrEmpty(event.getUserId()) && Strings.isNullOrEmpty(username)) {
+        String eventUsername = event.getDetails().get(Details.USERNAME);
+        if (!Strings.isNullOrEmpty(event.getUserId()) && Strings.isNullOrEmpty(eventUsername)) {
+            RealmModel realm = keycloakSession.realms().getRealm(event.getRealmId());
             // retrieve username from userId
-            UserModel user = keycloakSession.users().getUserById(event.getUserId(),
-                    keycloakSession.realms().getRealm(event.getRealmId()));
+            UserModel user = keycloakSession.users().getUserById(realm, event.getUserId());
             if (user != null) {
                 event.getDetails().put(Details.USERNAME, user.getUsername());
             }
@@ -261,8 +263,8 @@ public class EventEmitterProvider implements EventListenerProvider {
         // add always missing agent username
         ExtendedAuthDetails extendedAuthDetails = extendedAdminEvent.getAuthDetails();
         if (!Strings.isNullOrEmpty(extendedAuthDetails.getUserId())) {
-            UserModel user = keycloakSession.users().getUserById(extendedAuthDetails.getUserId(),
-                    keycloakSession.realms().getRealm(extendedAuthDetails.getRealmId()));
+            RealmModel realm = keycloakSession.realms().getRealm(extendedAuthDetails.getRealmId());
+            UserModel user = keycloakSession.users().getUserById(realm, extendedAuthDetails.getUserId());
             extendedAuthDetails.setUsername(user.getUsername());
         }
         // add username if resource is a user
@@ -274,9 +276,9 @@ public class EventEmitterProvider implements EventListenerProvider {
             Matcher m = r.matcher(resourcePath);
             if (m.matches()) {
                 String userId = m.group(1);
+                RealmModel realm = keycloakSession.realms().getRealm(adminEvent.getRealmId());
                 // retrieve user
-                UserModel user = keycloakSession.users().getUserById(userId,
-                        keycloakSession.realms().getRealm(adminEvent.getRealmId()));
+                UserModel user = keycloakSession.users().getUserById(realm, userId);
                 extendedAdminEvent.getDetails().put("user_id", userId);
                 if (user != null) {
                     extendedAdminEvent.getDetails().put("username", user.getUsername());
