@@ -77,7 +77,7 @@ public class EventEmitterProviderTest {
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername("test-user");
         UserModel user = new UserAdapter(null, null, null, userEntity);
-        Mockito.when(keycloakSession.users().getUserById(Mockito.any(), Mockito.any())).thenReturn(user);
+        Mockito.when(keycloakSession.users().getUserById((RealmModel)Mockito.any(), Mockito.any())).thenReturn(user);
 
         // Realm
         RealmEntity realmEntity = new RealmEntity();
@@ -170,26 +170,25 @@ public class EventEmitterProviderTest {
     public void testServerError() throws IOException, InterruptedException {
         HttpErrorHandler handler = new HttpErrorHandler();
         Undertow server = startHttpServer(handler);
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        IdGenerator idGenerator = new IdGenerator(1, 1);
-        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-        EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
-                idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents, null);
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            IdGenerator idGenerator = new IdGenerator(1, 1);
+            LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+            LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+            EventEmitterProvider eventEmitterProvider = new EventEmitterProvider(keycloakSession, httpClient,
+                    idGenerator, TARGET, SerialisationFormat.JSON, pendingEvents, pendingAdminEvents, null);
 
+            Assert.assertEquals(0, pendingEvents.size());
 
-        Assert.assertEquals(0, pendingEvents.size());
+            Event event = createEvent();
+            eventEmitterProvider.onEvent(event);
 
-        Event event = createEvent();
-        eventEmitterProvider.onEvent(event);
+            Assert.assertEquals(1, pendingEvents.size());
 
-        Assert.assertEquals(1, pendingEvents.size());
+            Event event2 = createEvent();
+            eventEmitterProvider.onEvent(event2);
 
-        Event event2 = createEvent();
-        eventEmitterProvider.onEvent(event2);
-
-        Assert.assertEquals(2, pendingEvents.size());
-        httpClient.close();
+            Assert.assertEquals(2, pendingEvents.size());
+        }
         server.stop();
     }
 
