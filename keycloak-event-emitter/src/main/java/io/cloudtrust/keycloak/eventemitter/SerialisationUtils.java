@@ -7,8 +7,6 @@ import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
 import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 
@@ -46,60 +44,13 @@ class SerialisationUtils {
             type = flatbuffers.events.EventType.UNKNOWN;
         }
 
-        // RealmId
-        int realmId = 0;
-        if (event.getRealmId() != null) {
-            realmId = builder.createString(event.getRealmId());
-        }
-
-        // ClientId
-        int clientId = 0;
-        if (event.getClientId() != null) {
-            clientId = builder.createString(event.getClientId());
-        }
-
-        // UserId
-        int userId = 0;
-        if (event.getUserId() != null) {
-            userId = builder.createString(event.getUserId());
-        }
-
-        // SessionId
-        int sessionId = 0;
-        if (event.getSessionId() != null) {
-            sessionId = builder.createString(event.getSessionId());
-        }
-
-        // IpAddress
-        int ipAddress = 0;
-        if (event.getIpAddress() != null) {
-            ipAddress = builder.createString(event.getIpAddress());
-        }
-
-        // Error
-        int error = 0;
-        if (event.getError() != null) {
-            error = builder.createString(event.getError());
-        }
-
-        // Details
-        int detailsVec = 0;
-        if (event.getDetails() != null) {
-            List<Integer> tuples = new ArrayList<>();
-            for (Map.Entry<String, String> entry : event.getDetails().entrySet()) {
-                int key = builder.createString(entry.getKey());
-                int value = builder.createString(entry.getValue());
-                int tuple = flatbuffers.events.Tuple.createTuple(builder, key, value);
-                tuples.add(tuple);
-            }
-
-            int[] details = new int[tuples.size()];
-            for (int i = 0; i < tuples.size(); i++) {
-                details[i] = tuples.get(i);
-            }
-
-            detailsVec = flatbuffers.events.Event.createDetailsVector(builder, details);
-        }
+        int realmId = createString(builder, event.getRealmId());
+        int clientId = createString(builder, event.getClientId());
+        int userId = createString(builder, event.getUserId());
+        int sessionId = createString(builder, event.getSessionId());
+        int ipAddress = createString(builder, event.getIpAddress());
+        int error = createString(builder, event.getError());
+        int detailsVec = createMap(builder, event.getDetails());
 
         flatbuffers.events.Event.startEvent(builder);
 
@@ -139,31 +90,11 @@ class SerialisationUtils {
         // AuthDetails
         int authDetailsOffset = 0;
         if (adminEvent.getAuthDetails() != null) {
-            int authDetailsRealmIdOffset = 0;
-            int authDetailsClientIdOffset = 0;
-            int authDetailsUserIdOffset = 0;
-            int authDetailsUsernameAddressOffset = 0;
-            int authDetailsIpAddressOffset = 0;
-
-            if (adminEvent.getAuthDetails().getRealmId() != null) {
-                authDetailsRealmIdOffset = builder.createString(adminEvent.getAuthDetails().getRealmId());
-            }
-
-            if (adminEvent.getAuthDetails().getClientId() != null) {
-                authDetailsClientIdOffset = builder.createString(adminEvent.getAuthDetails().getClientId());
-            }
-
-            if (adminEvent.getAuthDetails().getUserId() != null) {
-                authDetailsUserIdOffset = builder.createString(adminEvent.getAuthDetails().getUserId());
-            }
-
-            if (adminEvent.getAuthDetails().getUsername() != null) {
-                authDetailsUsernameAddressOffset = builder.createString(adminEvent.getAuthDetails().getUsername());
-            }
-
-            if (adminEvent.getAuthDetails().getIpAddress() != null) {
-                authDetailsIpAddressOffset = builder.createString(adminEvent.getAuthDetails().getIpAddress());
-            }
+            int authDetailsRealmIdOffset = createString(builder, adminEvent.getAuthDetails().getRealmId());
+            int authDetailsClientIdOffset = createString(builder, adminEvent.getAuthDetails().getClientId());
+            int authDetailsUserIdOffset = createString(builder, adminEvent.getAuthDetails().getUserId());
+            int authDetailsUsernameAddressOffset = createString(builder, adminEvent.getAuthDetails().getUsername());
+            int authDetailsIpAddressOffset = createString(builder, adminEvent.getAuthDetails().getIpAddress());
 
             authDetailsOffset = flatbuffers.events.AuthDetails.createAuthDetails(builder,
                     authDetailsRealmIdOffset, authDetailsClientIdOffset,
@@ -204,23 +135,7 @@ class SerialisationUtils {
         }
 
         // Details
-        int detailsVec = 0;
-        if (adminEvent.getDetails() != null) {
-            List<Integer> tuples = new ArrayList<>();
-            for (Map.Entry<String, String> entry : adminEvent.getDetails().entrySet()) {
-                int key = builder.createString(entry.getKey());
-                int value = builder.createString(entry.getValue());
-                int tuple = flatbuffers.events.Tuple.createTuple(builder, key, value);
-                tuples.add(tuple);
-            }
-
-            int[] details = new int[tuples.size()];
-            for (int i = 0; i < tuples.size(); i++) {
-                details[i] = tuples.get(i);
-            }
-
-            detailsVec = flatbuffers.events.Event.createDetailsVector(builder, details);
-        }
+        int detailsVec = createMap(builder, adminEvent.getDetails());
 
         // Error
         int errorOffset = 0;
@@ -248,4 +163,21 @@ class SerialisationUtils {
         return builder.dataBuffer();
     }
 
+    private static int createString(FlatBufferBuilder builder, String value) {
+        return value != null ? builder.createString(value) : 0;
+    }
+
+    private static int createMap(FlatBufferBuilder builder, Map<String, String> map) {
+        if (map==null) {
+            return 0;
+        }
+        int[] details = map.entrySet().stream()
+                .mapToInt(entry -> {
+                    int key = builder.createString(entry.getKey());
+                    int value = builder.createString(entry.getValue());
+                    return flatbuffers.events.Tuple.createTuple(builder, key, value);
+                })
+                .toArray();
+        return flatbuffers.events.Event.createDetailsVector(builder, details);
+    }
 }

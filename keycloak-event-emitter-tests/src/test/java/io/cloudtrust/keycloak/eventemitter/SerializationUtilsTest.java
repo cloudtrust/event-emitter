@@ -2,8 +2,11 @@ package io.cloudtrust.keycloak.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
+import io.cloudtrust.keycloak.customevent.ExtendedAuthDetails;
 import io.cloudtrust.keycloak.customevent.IdentifiedAdminEvent;
 import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.Event;
@@ -14,13 +17,13 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class SerializationUtilsTest {
 
-    private long UID = 123456789L;
+    private final long UID = 123456789L;
 
 
     @Test
@@ -184,118 +187,49 @@ public class SerializationUtilsTest {
     }
 
     private boolean equals(Event event, flatbuffers.events.Event eventFlat) {
-        if (event.getTime() != eventFlat.time()) {
-            return false;
-        }
-
-        if (event.getType().ordinal() != eventFlat.type()) {
-            return false;
-        }
-
-        if (!Objects.equals(event.getRealmId(), eventFlat.realmId())) {
-            return false;
-        }
-
-        if (!Objects.equals(event.getClientId(), eventFlat.clientId())) {
-            return false;
-        }
-
-        if (!Objects.equals(event.getUserId(), eventFlat.userId())) {
-            return false;
-        }
-
-        if (!Objects.equals(event.getSessionId(), eventFlat.sessionId())) {
-            return false;
-        }
-
-        if (!Objects.equals(event.getIpAddress(), eventFlat.ipAddress())) {
-            return false;
-        }
-
-        if (!Objects.equals(event.getError(), eventFlat.error())) {
-            return false;
-        }
-
-        if (event.getDetails() == null) {
-            if (eventFlat.detailsLength() != 0) {
-                return false;
-            }
-        } else if (event.getDetails().size() != eventFlat.detailsLength()) {
-            return false;
-        }
-
-        return true;
+        Map<String, String> eventDetails = ObjectUtils.defaultIfNull(event.getDetails(), Collections.emptyMap());
+        return new EqualsBuilder()
+                .append(event.getTime(), eventFlat.time())
+                .append(event.getType().ordinal(), eventFlat.type())
+                .append(event.getRealmId(), eventFlat.realmId())
+                .append(event.getClientId(), eventFlat.clientId())
+                .append(event.getUserId(), eventFlat.userId())
+                .append(event.getSessionId(), eventFlat.sessionId())
+                .append(event.getIpAddress(), eventFlat.ipAddress())
+                .append(event.getError(), eventFlat.error())
+                .append(eventDetails.size(), eventFlat.detailsLength())
+                .build();
     }
 
     private boolean equals(ExtendedAdminEvent adminEvent, flatbuffers.events.AdminEvent adminEventFlat) {
-        if (adminEvent.getTime() != adminEventFlat.time()) {
-            return false;
-        }
-
-        if (!Objects.equals(adminEvent.getRealmId(), adminEventFlat.realmId())) {
-            return false;
-        }
-
-        if (adminEvent.getAuthDetails() == null) {
-            if (adminEventFlat.authDetails() != null) {
-                return false;
-            }
-        } else {
-            if (!Objects.equals(adminEvent.getAuthDetails().getUserId(), adminEventFlat.authDetails().userId())) {
-                return false;
-            }
-            if (!Objects.equals(adminEvent.getAuthDetails().getUsername(), adminEventFlat.authDetails().username())) {
-                return false;
-            }
-            if (!Objects.equals(adminEvent.getAuthDetails().getClientId(), adminEventFlat.authDetails().clientId())) {
-                return false;
-            }
-            if (!Objects.equals(adminEvent.getAuthDetails().getIpAddress(), adminEventFlat.authDetails().ipAddress())) {
-                return false;
-            }
-            if (!Objects.equals(adminEvent.getAuthDetails().getRealmId(), adminEventFlat.authDetails().realmId())) {
-                return false;
-            }
-        }
-
-        if (adminEvent.getResourceType() == null) {
-            if (adminEventFlat.resourceType() != 0) {
-                return false;
-            }
-        } else if (adminEvent.getResourceType().ordinal() != adminEventFlat.resourceType()) {
-            return false;
-        }
-
-        if (adminEvent.getOperationType() == null) {
-            if (adminEventFlat.operationType() != 0) {
-                return false;
-            }
-        } else if (adminEvent.getOperationType().ordinal() != adminEventFlat.operationType()) {
-            return false;
-        }
-
-        if (!Objects.equals(adminEvent.getResourcePath(), adminEventFlat.resourcePath())) {
-            return false;
-        }
-
-        if (!Objects.equals(adminEvent.getRepresentation(), adminEventFlat.representation())) {
-            return false;
-        }
-
-
-        if (adminEvent.getDetails() == null) {
-            if (adminEventFlat.detailsLength() != 0) {
-                return false;
-            }
-        } else if (adminEvent.getDetails().size() != adminEventFlat.detailsLength()) {
-            return false;
-        }
-
-        if (!Objects.equals(adminEvent.getError(), adminEventFlat.error())) {
-            return false;
-        }
+        int adminEventResourceType = adminEvent.getResourceType() == null ? 0 : adminEvent.getResourceType().ordinal();
+        int adminEventOperationType = adminEvent.getOperationType() == null ? 0 : adminEvent.getOperationType().ordinal();
+        int adminEventDetailsSize = adminEvent.getDetails() == null ? 0 : adminEvent.getDetails().size();
+        new EqualsBuilder()
+                .append(adminEvent.getTime(), adminEventFlat.time())
+                .append(adminEvent.getRealmId(), adminEventFlat.realmId())
+                .appendSuper(equals(adminEvent.getAuthDetails(), adminEventFlat.authDetails()))
+                .append(adminEventResourceType, adminEventFlat.resourceType())
+                .append(adminEventOperationType, adminEventFlat.operationType())
+                .append(adminEvent.getResourcePath(), adminEventFlat.resourcePath())
+                .append(adminEvent.getRepresentation(), adminEventFlat.representation())
+                .append(adminEventDetailsSize, adminEventFlat.detailsLength())
+                .append(adminEvent.getError(), adminEventFlat.error())
+                .build();
 
         return true;
     }
 
+    private static boolean equals(ExtendedAuthDetails adminEventDetails, flatbuffers.events.AuthDetails adminEventFlatDetails) {
+        if (adminEventDetails == null) {
+            return adminEventFlatDetails == null;
+        }
+        return new EqualsBuilder()
+                .append(adminEventDetails.getUserId(), adminEventFlatDetails.userId())
+                .append(adminEventDetails.getUsername(), adminEventFlatDetails.username())
+                .append(adminEventDetails.getClientId(), adminEventFlatDetails.clientId())
+                .append(adminEventDetails.getIpAddress(), adminEventFlatDetails.ipAddress())
+                .append(adminEventDetails.getRealmId(), adminEventFlatDetails.realmId())
+                .build();
+    }
 }
