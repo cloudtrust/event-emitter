@@ -1,6 +1,5 @@
 package io.cloudtrust.keycloak.customevent;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.events.admin.AuthDetails;
@@ -13,7 +12,6 @@ import java.util.Map;
  * username of the user (created, updated or deleted)
  */
 public class ExtendedAdminEvent extends IdentifiedAdminEvent {
-
     @JsonIgnore
     private ExtendedAuthDetails extAuthDetails;
 

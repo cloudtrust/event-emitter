@@ -1,127 +1,72 @@
 package io.cloudtrust.keycloak;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.cloudtrust.keycloak.eventemitter.EventEmitterProvider;
 import io.cloudtrust.keycloak.eventemitter.EventEmitterProviderFactory;
-import io.undertow.Undertow;
+import io.cloudtrust.keycloak.test.AbstractInKeycloakTest;
+import io.cloudtrust.keycloak.test.http.HttpServerManager;
+import io.cloudtrust.keycloak.test.pages.LoginPage;
+import io.cloudtrust.keycloak.test.pages.WebPage;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.StatusCodes;
 import org.apache.commons.io.IOUtils;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.keycloak.admin.client.Keycloak;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.FluentTestsHelper;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.openqa.selenium.WebDriver;
 import org.xnio.streams.ChannelInputStream;
 
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.LinkedList;
 
-public abstract class AbstractTest {
-
-    private KeycloakTestingClient testingClient = KeycloakTestingClient.getInstance(KEYCLOAK_URL);
-
-    protected static Undertow server;
+public abstract class AbstractTest extends AbstractInKeycloakTest {
+    private static final Logger logger = Logger.getLogger(AbstractTest.class);
     protected static final int LISTEN_PORT = 9999;
-    protected static final String KEYCLOAK_URL = getKeycloakUrl();
-    private static final String MODULE_NAME_WAR = "event-emitter.war";
 
     private static final String username = "toto";
     private static final String password = "passwordverylongandhardtoguess";
 
     protected RealmResource testRealm;
-    protected Keycloak keycloak;
     protected String token;
 
-    @Drone
-    protected WebDriver driver;
-
-    @Page
+    @WebPage
     protected LoginPage loginPage;
 
-    @ArquillianResource
-    protected OAuthClient oauth;
-
-    @ClassRule
-    public static final EnvironmentVariables envVariables = new EnvironmentVariables();
-
-    private static String getKeycloakUrl() {
-        String url = FluentTestsHelper.DEFAULT_KEYCLOAK_URL;
-        try {
-            URI uri = new URI(FluentTestsHelper.DEFAULT_KEYCLOAK_URL);
-            url = url.replace(String.valueOf(uri.getPort()), System.getProperty("auth.server.http.port", "8080"));
-        } catch (Exception e) {
-            // Ignore
-        }
-        return url;
+    @BeforeAll
+    public static void initServer() {
+        HttpServerManager.getDefault().startHttpServer(LISTEN_PORT, handler);
     }
 
-    @BeforeClass
-    public static void initServer() throws IOException {
-        if (server == null) {
-            server = startHttpServer(handler);
-        }
+    @AfterAll
+    public static void stopServer() {
+        HttpServerManager.getDefault().stop();
     }
 
-    @BeforeClass
-    public static void intEnv() throws IOException {
-        envVariables.set(EventEmitterProvider.KEYCLOAK_BRIDGE_SECRET_TOKEN, password);
-        envVariables.set(EventEmitterProvider.HOSTNAME, username);
+    @BeforeEach
+    public void setup() throws Exception {
+        this.token = this.getKeycloakAdminClient().tokenManager().getAccessTokenString();
+        this.createRealm("/testrealm.json", this::setupTestRealm);
+        this.testRealm = this.getRealm();
+
+        this.injectComponents();
+        this.events().activate("test");
     }
 
-    @Before
-    public void createTestRealm() throws Exception {
-        oauth.init(driver);
-        keycloak = Keycloak.getInstance(KEYCLOAK_URL, "master", "admin", "admin", "admin-cli");
-        token = keycloak.tokenManager().getAccessTokenString();
-        testRealm = importTestRealm(keycloak);
-        setupTestRealm();
-    }
-
-    @After
+    @AfterEach
     public void deleteTestRealm() {
         testRealm.remove();
     }
 
-    @After
+    @AfterEach
     public void clearEventQueue() {
-        while (pollEvent() != null) ;
-    }
-
-    protected EventRepresentation pollEvent() {
-        return testingClient.testing().pollEvent();
-    }
-
-    private RealmResource importTestRealm(Keycloak keycloak) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        RealmRepresentation realmRepresentation = mapper.readValue(
-                getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        keycloak.realms().create(realmRepresentation);
-        return keycloak.realm("test");
+        this.events().clear();
     }
 
     protected static HttpHandler handler = new HttpHandler() {
@@ -131,15 +76,16 @@ public abstract class AbstractTest {
         public void handleRequest(HttpServerExchange exchange) throws Exception {
             String basicToken = exchange.getRequestHeaders().get("Authorization").element();
             String[] subParts = basicToken.split("Basic ");
-            Assert.assertEquals(2, subParts.length);
+            Assertions.assertEquals(2, subParts.length);
             String decodedToken = new String(Base64.getDecoder().decode(subParts[1]));
 
             if (!(username + ":" + password).equals(decodedToken)) {
-                exchange.setStatusCode(StatusCodes.FORBIDDEN);
+                logger.warnf("Event service received %s when expecting %s:%s", decodedToken, username, password);
+                exchange.setResponseCode(StatusCodes.FORBIDDEN);
                 return;
             }
 
-            exchange.setStatusCode(StatusCodes.OK);
+            exchange.setResponseCode(StatusCodes.OK);
             ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
             jsonReceived = IOUtils.toString(cis, StandardCharsets.UTF_8);
         }
@@ -149,27 +95,7 @@ public abstract class AbstractTest {
         }
     };
 
-
-    protected static Undertow startHttpServer(HttpHandler handler) {
-        Undertow server = Undertow.builder()
-                .addHttpListener(LISTEN_PORT, "0.0.0.0", handler)
-                .build();
-        server.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> server.stop()));
-        return server;
-    }
-
-    @Deployment
-    public static WebArchive deploy() {
-        return ShrinkWrap.create(WebArchive.class, MODULE_NAME_WAR)
-                .addClasses(
-                        EventEmitterProvider.class,
-                        EventEmitterProviderFactory.class)
-                .addAsManifestResource(new File("src/test/resources", "manifest.xml"))
-                .addAsServiceProvider(EventEmitterProviderFactory.class);
-    }
-
-    private void setupTestRealm() {
+    private void setupTestRealm(RealmResource testRealm) {
         RealmRepresentation realm = testRealm.toRepresentation();
         realm.getEventsListeners().add(EventEmitterProviderFactory.PROVIDER_ID);
         testRealm.update(realm);
@@ -188,7 +114,7 @@ public abstract class AbstractTest {
             }
             testUser.getCredentials().add(credentialPass);
             try (Response createUser = testRealm.users().create(testUser)) {
-                Assert.assertEquals(201, createUser.getStatus());
+                Assertions.assertEquals(201, createUser.getStatus());
             }
         }
     }

@@ -38,7 +38,6 @@ import java.util.regex.Pattern;
  * Serialization format can either be flatbuffer or json according to constructor parameter.
  */
 public class EventEmitterProvider implements EventListenerProvider {
-
     private static final Logger logger = Logger.getLogger(EventEmitterProvider.class);
 
     public static final String KEYCLOAK_BRIDGE_SECRET_TOKEN = "CT_KEYCLOAK_BRIDGE_SECRET_TOKEN";

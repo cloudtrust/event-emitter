@@ -1,39 +1,38 @@
 package io.cloudtrust.keycloak.snowflake;
 
-
-import org.junit.Test;
-
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * @author Sébastien Pasche
  */
-public class IdGeneratorTest {
-
+class IdGeneratorTest {
     @Test
-    public void testGenerateId() throws Exception {
+    void testGenerateId() {
         final IdGenerator idGenerator = new IdGenerator(1, 1);
         final Long id = idGenerator.nextValidId();
-        assertTrue(id > 0L);
+        assertThat(id>0, is(true));
     }
 
     @Test
-    public void testIncreasingIds() throws Exception {
+    void testIncreasingIds() {
         final IdGenerator idGenerator = new IdGenerator(1, 1);
         Long lastId = 0L;
         for (int i = 0; i < 100; i++) {
             Long id = idGenerator.nextValidId();
-            assertTrue(id > lastId);
+            assertThat(id > lastId, is(true));
             lastId = id;
         }
     }
 
     @Test
-    public void testMillionIds() throws Exception {
+    void testMillionIds() {
         final IdGenerator idGenerator = new IdGenerator(31, 3);
         final Long startTime = System.currentTimeMillis();
         for (int i = 0; i < 1000000; i++) {
@@ -46,7 +45,7 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void testGenerateUniqueIds() throws Exception {
+    void testGenerateUniqueIds() {
         final IdGenerator idGenerator = new IdGenerator(0, 0);
         final Set<Long> ids = new HashSet<>();
         final int count = 2000000;
@@ -58,53 +57,52 @@ public class IdGeneratorTest {
                 ids.add(id);
             }
         }
-        assertTrue(ids.size() == count);
+        assertThat(ids.size(), is(count));
     }
 
-
     @Test
-    public void testGenerateIdsOver50Billion() throws Exception {
+    void testGenerateIdsOver50Billion() {
         final IdGenerator idGenerator = new IdGenerator(0, 0);
-        assertTrue(idGenerator.nextValidId() > 50000000000L);
+        assertThat(idGenerator.nextValidId() > 50000000000L, is(true));
     }
 
     @Test
-    public void testUniqueIdsBackwardsTime() throws Exception {
+    void testUniqueIdsBackwardsTime() throws Exception {
         final long sequenceMask = -1L ^ (-1L << 15);
         final StaticTimeGenerator generator = new StaticTimeGenerator(0, 0);
 
         // first we generate 2 ids with the same time, so that we get the sequence to 1
-        assertTrue(generator.getSequence().longValue() == 0L);
-        assertTrue(generator.time == 1L);
+        assertThat(generator.getSequence().longValue(), is(0L));
+        assertThat(generator.time, is(1L));
 
         final Long id1 = generator.nextId();
-        assertTrue(id1 >> 22 == 1L);
-        assertTrue((id1 & sequenceMask) == 0L);
+        assertThat(id1 >> 22, is(1L));
+        assertThat(id1 & sequenceMask, is(0L));
 
-        assertTrue(generator.getSequence().longValue() == 0L);
-        assertTrue(generator.time == 1L);
+        assertThat(generator.getSequence().longValue(), is(0L));
+        assertThat(generator.time, is(1L));
 
         final Long id2 = generator.nextId();
-        assertTrue(id2 >> 22 == 1L);
-        assertTrue((id2 & sequenceMask) == 1L);
+        assertThat(id2 >> 22, is(1L));
+        assertThat(id2 & sequenceMask, is(1L));
 
         // then we set the time backwards
         generator.time = 0L;
-        assertTrue(generator.getSequence().longValue() == 1L);
+        assertThat(generator.getSequence().longValue(), is(1L));
 
         Throwable e = null;
         try {
             generator.nextId();
         } catch (InvalidSystemClock ex) {
             e = ex;
-            assertTrue(generator.getSequence().longValue() == 1L);
+            assertThat(generator.getSequence().longValue(), is(1L));
         }
-        assertTrue(e instanceof InvalidSystemClock);
+        Assertions.assertTrue(e instanceof InvalidSystemClock);
 
         generator.time = 1L;
         final Long id3 = generator.nextId();
-        assertTrue(id3 >> 22 == 1L);
-        assertTrue((id3 & sequenceMask) == 2L);
+        assertThat(id3 >> 22, is(1L));
+        assertThat(id3 & sequenceMask, is(2L));
     }
 
     class StaticTimeGenerator extends IdGenerator {
@@ -118,6 +116,5 @@ public class IdGeneratorTest {
         protected long timeGen() {
             return time + IdGeneratorConfig.START_EPOCH;
         }
-
     }
 }
