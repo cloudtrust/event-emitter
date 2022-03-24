@@ -7,13 +7,19 @@
 set -eE
 MODULE_DIR=$(dirname $0)
 TARGET_DIR=$MODULE_DIR/target
-LIBRARY_DIR=${MODULE_DIR}/lib-modules
+[ -z "$WINDIR" ] && KC_EXE=kc.sh || KC_EXE=kc.bat
 
 usage ()
 {
     echo "usage: $0 keycloak_path [-c] [-t host] [-u]"
 }
 
+abort_usage_keycloak()
+{
+  echo "Invalid keycloak path"
+  usage
+  exit 1
+}
 
 init()
 {
@@ -70,19 +76,14 @@ init()
         exit 1
     fi
     argv__KEYCLOAK="$1"
+    [ -d $argv__KEYCLOAK ] && [ -d $argv__KEYCLOAK/bin ] && [ -d $argv__KEYCLOAK/providers ] && [ -d $argv__KEYCLOAK/conf ] || abort_usage_keycloak
     # optional args
-    CONF_FILE=""
-    if [[ "$argv__CLUSTER" -eq 1 ]]; then
-        CONF_FILE=$argv__KEYCLOAK/standalone/configuration/standalone-ha.xml
-    else
-        CONF_FILE=$argv__KEYCLOAK/standalone/configuration/standalone.xml
-    fi
+    CONF_FILE=$argv__KEYCLOAK/conf/keycloak.conf
     echo $CONF_FILE
     MODULE_NAME=$(xmlstarlet sel -N oe="urn:jboss:module:1.3" -t -v '/oe:module/@name' -n $MODULE_DIR/module.xml)
     MODULE=${MODULE_NAME##*.}
-    JAR_PATH=`find $TARGET_DIR/ -type f -name "*.jar" -not -name "*sources.jar" | grep -v "archive-tmp"`
+    JAR_PATH=`find ${TARGET_DIR} -type f -name "*.jar" -not -name "*sources.jar" | grep -v "archive-tmp"`
     JAR_NAME=`basename $JAR_PATH`
-    MODULE_PATH=${MODULE_NAME//./\/}/main
 }
 
 init_exceptions()
@@ -93,15 +94,37 @@ init_exceptions()
     Main__ParameterException=2
 }
 
+del_configuration()
+{
+  if [[ ! -z "$1" ]] ; then
+    sed -i "/^$1=/d" ${CONF_FILE}
+  fi
+}
+
+add_configuration()
+{
+  if [[ ! -z "$1" ]] ; then
+    sed -i "/^$1=/d" ${CONF_FILE}
+    echo "$1=$2" >> ${CONF_FILE}
+  fi
+}
+
 cleanup()
 {
     #clean dir structure in case of script failure
     echo "cleanup..."
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -d "/_:server/_:profile/c:subsystem/c:providers/c:provider[text()='module:$MODULE_NAME']" $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -d "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']" $CONF_FILE
-    sed -i "$ s/,$MODULE$//" $argv__KEYCLOAK/modules/layers.conf
-    sed -i "$ s/\([=,]\)$MODULE,/\1/" $argv__KEYCLOAK/modules/layers.conf
-    rm -rf $argv__KEYCLOAK/modules/system/layers/$MODULE
+
+    del_configuration spi-events-listener-event-emitter-enabled
+    del_configuration spi-events-listener-event-emitter-format
+    del_configuration spi-events-listener-event-emitter-target-uri
+    del_configuration spi-events-listener-event-emitter-buffer-capacity
+    del_configuration spi-events-listener-event-emitter-keycloak-id
+    del_configuration spi-events-listener-event-emitter-datacenter-id
+    del_configuration spi-events-listener-event-emitter-connect-timeout-millis
+    del_configuration spi-events-listener-event-emitter-connection-request-timeout-millis
+    del_configuration spi-events-listener-event-emitter-socket-timeout-millis
+    rm -rf $argv__KEYCLOAK/providers/$MODULE
+
     echo "done"
 }
 
@@ -140,51 +163,20 @@ Main__main()
         exit 0
     fi
     # install module
-    mkdir -p $argv__KEYCLOAK/modules/system/layers/$MODULE/$MODULE_PATH/
-    cp $JAR_PATH $argv__KEYCLOAK/modules/system/layers/$MODULE/$MODULE_PATH/
-    cp $MODULE_DIR/module.xml $argv__KEYCLOAK/modules/system/layers/$MODULE/$MODULE_PATH/
-    sed -i "s@JAR_NAME@${JAR_NAME}@g" $argv__KEYCLOAK/modules/system/layers/$MODULE/$MODULE_PATH/module.xml
-    if ! grep -q "$MODULE" "$argv__KEYCLOAK/modules/layers.conf"; then
-        sed -i "$ s/$/,$MODULE/" $argv__KEYCLOAK/modules/layers.conf
-    fi
+    cp $JAR_PATH $argv__KEYCLOAK/providers/
 
-    # add provider
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:providers" -t elem -n provider -v "module:$MODULE_NAME" $CONF_FILE
-
+    # configure module
     # add SPI configuration for events listeners (if not already there)
-    MODULES_EXISTS=`xmlstarlet sel -N c="urn:jboss:domain:keycloak-server:1.1" -t -v "count(/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener'])" $CONF_FILE`
-    if [ $MODULES_EXISTS -eq "0" ]; then
-        xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem" -t elem -n spi $CONF_FILE
-        xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[not(@name)]" -t attr -n 'name' -v 'eventsListener' $CONF_FILE
-    fi
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']" -t elem -n provider $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[not(@name)]" -t attr -n name -v 'event-emitter' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']" -t attr -n enabled -v 'true' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']" -t elem -n properties $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'format' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='format']" -t attr -n value -v 'FLATBUFFER' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'targetUri' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='targetUri']" -t attr -n value -v "$argv__TARGET" $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'bufferCapacity' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='bufferCapacity']" -t attr -n value -v '10' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'keycloakId' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='keycloakId']" -t attr -n value -v '1' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'datacenterId' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='datacenterId']" -t attr -n value -v '1' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'connectTimeoutMillis' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='connectTimeoutMillis']" -t attr -n value -v '500' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'connectionRequestTimeoutMillis' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='connectionRequestTimeoutMillis']" -t attr -n value -v '500' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -s "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties" -t elem -n property $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[not(@*)]" -t attr -n name -v 'socketTimeoutMillis' $CONF_FILE
-    xmlstarlet ed -L -N c="urn:jboss:domain:keycloak-server:1.1" -i "/_:server/_:profile/c:subsystem/c:spi[@name='eventsListener']/c:provider[@name='event-emitter']/c:properties/c:property[@name='socketTimeoutMillis']" -t attr -n value -v '500' $CONF_FILE
+    add_configuration spi-events-listener-event-emitter-enabled true
+    add_configuration spi-events-listener-event-emitter-format FLATBUFFER
+    add_configuration spi-events-listener-event-emitter-target-uri "$argv__TARGET"
+    add_configuration spi-events-listener-event-emitter-buffer-capacity 10
+    add_configuration spi-events-listener-event-emitter-keycloak-id 1
+    add_configuration spi-events-listener-event-emitter-datacenter-id 1
+    add_configuration spi-events-listener-event-emitter-connect-timeout-millis 500
+    add_configuration spi-events-listener-event-emitter-connection-request-timeout-millis 500
+    add_configuration spi-events-listener-event-emitter-socket-timeout-millis 500
+    $argv__KEYCLOAK/bin/$KC_EXE build
 
     exit 0
 }

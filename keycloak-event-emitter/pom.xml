@@ -7,11 +7,11 @@
     <parent>
         <groupId>io.cloudtrust</groupId>
         <artifactId>keycloak-event-emitter-parent</artifactId>
-        <version>14.0.0</version>
+        <version>17.0.1</version>
     </parent>
 
     <artifactId>keycloak-event-emitter</artifactId>
-    <description>Keycloak module to transmit events to keycloak-bridge</description>
+    <description>Keycloak module to transmit events</description>
     <packaging>jar</packaging>
 
     <dependencies>
