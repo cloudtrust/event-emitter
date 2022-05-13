@@ -1,6 +1,5 @@
 package io.cloudtrust.keycloak.snowflake;
 
-
 import com.google.common.base.MoreObjects;
 import org.jboss.logging.Logger;
 
@@ -19,12 +18,10 @@ import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.SEQUENCE_MASK;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.START_EPOCH;
 import static io.cloudtrust.keycloak.snowflake.IdGeneratorConfig.TIMESTAMP_LEFT_SHIFT;
 
-
 /**
  * @author Sébastien Pasche
  */
 public class IdGenerator {
-
     private static final Logger logger = Logger.getLogger(IdGenerator.class);
 
     private final int keycloakId;
@@ -38,7 +35,6 @@ public class IdGenerator {
     }
 
     public IdGenerator(final int keycloakId, final int datacenterId, final long startSequence) {
-
         checkNotNull(keycloakId);
         checkArgument(keycloakId >= 0, String.format("component Id can't be greater than %d or less than 0",
                 MAX_KEYCLOAK_ID));
@@ -61,7 +57,6 @@ public class IdGenerator {
                 KEYCLOAK_ID_BITS, SEQUENCE_BITS);
         logger.infof("IdGenerator instance settings: datacenter ID = %d, keycloak ID = %d", datacenterId, keycloakId);
         sequence = new AtomicLong(startSequence);
-
     }
 
     /**
@@ -72,7 +67,7 @@ public class IdGenerator {
      */
     public synchronized long nextId() throws InvalidSystemClock {
         long timestamp = timeGen();
-        long curSequence = 0L;
+        long curSequence;
 
         final long prevTimestamp = lastTimestamp.get();
 

@@ -5,8 +5,7 @@ import io.cloudtrust.keycloak.eventemitter.HasUid;
 import org.keycloak.events.admin.AdminEvent;
 
 public class IdentifiedAdminEvent extends AdminEvent implements HasUid {
-
-    private long uid;
+    private final long uid;
 
     /**
      * Constructor by copy which add a uid to AdminEvent.
