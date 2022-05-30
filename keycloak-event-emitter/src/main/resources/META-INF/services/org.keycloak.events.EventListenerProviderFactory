@@ -1,1 +1,2 @@
 io.cloudtrust.keycloak.eventemitter.EventEmitterProviderFactory
+io.cloudtrust.keycloak.kafkaeventemitter.KafkaEventEmitterProviderFactory
