@@ -1,37 +1,41 @@
 package io.cloudtrust.keycloak.kafkaeventemitter;
 
 public class KafkaEventEmitterState {
-    private String state;
+    private state currentState;
+
+    private enum state{
+      INITIALIZED, STARTING, PENDING, WORKING;
+    };
 
     public void initialized(){
-        state = "initialized";
+        currentState = state.INITIALIZED;
     }
 
     public  void  starting(){
-        state = "starting";
+        currentState = state.STARTING;
     }
 
     public void pending(){
-        state = "pending";
+        currentState = state.PENDING;
     }
 
     public void working(){
-        state = "working";
+        currentState = state.WORKING;
     }
 
     public boolean isInitialized(){
-        return state == "initialized";
+        return currentState == state.INITIALIZED;
     }
 
     public boolean isStarting(){
-        return state == "starting";
+        return currentState == state.STARTING;
     }
 
     public boolean isPending(){
-        return state == "pending";
+        return currentState == state.PENDING;
     }
 
     public boolean isWorking(){
-        return state == "working";
+        return currentState == state.WORKING;
     }
 }
