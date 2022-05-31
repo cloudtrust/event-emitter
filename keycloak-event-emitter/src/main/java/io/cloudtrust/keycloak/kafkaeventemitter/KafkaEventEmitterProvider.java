@@ -62,7 +62,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         // Flatbuffer serialization
         ByteBuffer buffer = SerialisationUtils.toFlat(identifiedEvent);
 
-        produceEvent(buffer, identifiedEvent.getUserId() ,eventTopic);
+        produceEvent(buffer, identifiedEvent.getUserId(), eventTopic);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         // Flatbuffer serialization
         ByteBuffer buffer = SerialisationUtils.toFlat(customAdminEvent);
 
-        produceEvent(buffer, customAdminEvent.getAuthDetails().getUserId(),adminEventTopic);
+        produceEvent(buffer, customAdminEvent.getAuthDetails().getUserId(), adminEventTopic);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         }
     }
 
-    private void produceEvent(ByteBuffer buffer, String key,String topic) {
+    private void produceEvent(ByteBuffer buffer, String key, String topic) {
         byte[] b = new byte[buffer.remaining()];
         buffer.get(b);
 
@@ -137,14 +137,14 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         // Event production in Kafka topic
         ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, eventValue);
 
-        if (state.isWorking()){
+        if (state.isWorking()) {
             producer.send(record, (RecordMetadata recordMetadata, Exception e) -> {
                 if (e != null) {
                     logger.error(e);
                     logger.error(record);
                 }
             });
-        }else if (producer == null) {
+        } else if (producer == null) {
             stateLock.lock();
             while (!pendingEvents.offer(record)) {
                 ProducerRecord<String, String> skippedRecord = pendingEvents.poll();
@@ -154,7 +154,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
             }
             state.pending();
             stateLock.unlock();
-        }else if (state.isStarting() || state.isPending()){
+        } else if (state.isStarting() || state.isPending()) {
             stateLock.lock();
             while (!pendingEvents.offer(record)) {
                 ProducerRecord<String, String> skippedRecord = pendingEvents.poll();
@@ -180,7 +180,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
             }
             state.working();
             stateLock.unlock();
-        }else{
+        } else {
             logger.error(state);
             logger.error(record);
             throw new IllegalStateException("Kafka event consumer is in an indefinite state");

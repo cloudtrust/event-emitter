@@ -185,6 +185,7 @@ Main__main()
     add_configuration spi-events-listener-kafka-event-emitter-security-protocol SASL_PLAINTEXT
     add_configuration spi-events-listener-kafka-event-emitter-sasl-jaas-config org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required clientId="kafka-client" clientSecret="qvFJyeuOrUCxcZnvlj78jBhoiOmigsln" scope="profile";
     add_configuration spi-events-listener-kafka-event-emitter-sasl-oauthbearer-token-endpoint-url http://keycloak.local:8080/auth/realms/kafka/protocol/openid-connect/token
+    add_configuration spi-events-listener-kafka-event-emitter-sasl-mechanism OAUTHBEARER
     add_configuration spi-events-listener-kafka-event-emitter-keycloak-id 1
     add_configuration spi-events-listener-kafka-event-emitter-datacenter-id 1
     $argv__KEYCLOAK/bin/$KC_EXE build

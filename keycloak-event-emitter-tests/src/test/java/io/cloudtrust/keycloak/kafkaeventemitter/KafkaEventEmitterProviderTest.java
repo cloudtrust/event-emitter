@@ -2,13 +2,15 @@ package io.cloudtrust.keycloak.kafkaeventemitter;
 
 
 import io.cloudtrust.keycloak.snowflake.IdGenerator;
+import io.cloudtrust.keycloak.test.container.KeycloakDeploy;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
@@ -24,7 +26,7 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 
 import java.nio.ByteBuffer;
 import java.util.Base64;
@@ -32,7 +34,7 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(KeycloakDeploy.class)
 public class KafkaEventEmitterProviderTest {
     private static final String topicEvent = "test-event";
     private static final String topicAdminEvent = "test-admin-event";
@@ -42,8 +44,9 @@ public class KafkaEventEmitterProviderTest {
     private KeycloakSession keycloakSession;
     private MockProducer<String, String> mockProducer;
 
-    @Before
+    @BeforeEach
     public void initMock() {
+        MockitoAnnotations.openMocks(this);
         // user
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername("test-user");
@@ -76,9 +79,9 @@ public class KafkaEventEmitterProviderTest {
 
         byte[] b = Base64.getDecoder().decode(producedEvent.value());
         flatbuffers.events.Event receivedEvent = flatbuffers.events.Event.getRootAsEvent(ByteBuffer.wrap(b));
-        Assert.assertEquals(event.getTime(), receivedEvent.time());
-        Assert.assertEquals(event.getType().ordinal(), receivedEvent.type());
-        Assert.assertEquals(event.getClientId(), receivedEvent.clientId());
+        Assertions.assertEquals(event.getTime(), receivedEvent.time());
+        Assertions.assertEquals(event.getType().ordinal(), receivedEvent.type());
+        Assertions.assertEquals(event.getClientId(), receivedEvent.clientId());
     }
 
     @Test
@@ -99,9 +102,9 @@ public class KafkaEventEmitterProviderTest {
         byte[] b = Base64.getDecoder().decode(producedEvent.value());
 
         flatbuffers.events.AdminEvent receivedEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(ByteBuffer.wrap(b));
-        Assert.assertEquals(event.getTime(), receivedEvent.time());
-        Assert.assertEquals(event.getOperationType().ordinal(), receivedEvent.operationType());
-        Assert.assertEquals(event.getAuthDetails().getUserId(), receivedEvent.authDetails().userId());
+        Assertions.assertEquals(event.getTime(), receivedEvent.time());
+        Assertions.assertEquals(event.getOperationType().ordinal(), receivedEvent.operationType());
+        Assertions.assertEquals(event.getAuthDetails().getUserId(), receivedEvent.authDetails().userId());
     }
 
     @Test
@@ -118,7 +121,7 @@ public class KafkaEventEmitterProviderTest {
         Event event = createEvent();
         kafkaEventEmitterProvider.onEvent(event);
         List<ProducerRecord<String, String>> recordList = mockProducer.history();
-        Assert.assertEquals(1, recordList.size());
+        Assertions.assertEquals(1, recordList.size());
     }
 
     private Event createEvent() {

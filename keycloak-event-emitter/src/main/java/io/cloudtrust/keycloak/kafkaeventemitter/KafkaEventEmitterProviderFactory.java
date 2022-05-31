@@ -59,7 +59,7 @@ public class KafkaEventEmitterProviderFactory implements EventListenerProviderFa
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        if(state.isInitialized()) {
+        if (state.isInitialized()) {
             state.starting();
             producer = new KafkaProducer<String, String>(kafkaProperties);
         }
@@ -100,7 +100,7 @@ public class KafkaEventEmitterProviderFactory implements EventListenerProviderFa
 
     @Override
     public void close() {
-        if (producer != null){
+        if (producer != null) {
             producer.close();
         }
     }
