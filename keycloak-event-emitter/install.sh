@@ -111,6 +111,18 @@ cleanup()
     del_configuration spi-events-listener-event-emitter-connect-timeout-millis
     del_configuration spi-events-listener-event-emitter-connection-request-timeout-millis
     del_configuration spi-events-listener-event-emitter-socket-timeout-millis
+
+    del_configuration spi-events-listener-kafka-event-emitter-buffer-capacity
+    del_configuration spi-events-listener-kafka-event-emitter-client-id
+    del_configuration spi-events-listener-kafka-event-emitter-bootstrap-servers
+    del_configuration spi-events-listener-kafka-event-emitter-event-topic
+    del_configuration spi-events-listener-kafka-event-emitter-admin-event-topic
+    del_configuration spi-events-listener-kafka-event-emitter-security-protocol
+    del_configuration spi-events-listener-kafka-event-emitter-sasl-jaas-config
+    del_configuration spi-events-listener-kafka-event-emitter-sasl-oauthbearer-token-endpoint-url
+    del_configuration spi-events-listener-kafka-event-emitter-keycloak-id
+    del_configuration spi-events-listener-kafka-event-emitter-datacenter-id
+
     rm -rf $argv__KEYCLOAK/providers/$JAR_NAME
 
     echo "done"
@@ -164,6 +176,18 @@ Main__main()
     add_configuration spi-events-listener-event-emitter-connect-timeout-millis 500
     add_configuration spi-events-listener-event-emitter-connection-request-timeout-millis 500
     add_configuration spi-events-listener-event-emitter-socket-timeout-millis 500
+
+    add_configuration spi-events-listener-kafka-event-emitter-buffer-capacity 50
+    add_configuration spi-events-listener-kafka-event-emitter-client-id keycloak
+    add_configuration spi-events-listener-kafka-event-emitter-bootstrap-servers kafka:29093
+    add_configuration spi-events-listener-kafka-event-emitter-event-topic keycloak-event
+    add_configuration spi-events-listener-kafka-event-emitter-admin-event-topic keycloak-admin-event
+    add_configuration spi-events-listener-kafka-event-emitter-security-protocol SASL_PLAINTEXT
+    add_configuration spi-events-listener-kafka-event-emitter-sasl-jaas-config org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required clientId="kafka-client" clientSecret="qvFJyeuOrUCxcZnvlj78jBhoiOmigsln" scope="profile";
+    add_configuration spi-events-listener-kafka-event-emitter-sasl-oauthbearer-token-endpoint-url http://keycloak.local:8080/auth/realms/kafka/protocol/openid-connect/token
+    add_configuration spi-events-listener-kafka-event-emitter-sasl-mechanism OAUTHBEARER
+    add_configuration spi-events-listener-kafka-event-emitter-keycloak-id 1
+    add_configuration spi-events-listener-kafka-event-emitter-datacenter-id 1
     $argv__KEYCLOAK/bin/$KC_EXE build
 
     exit 0
