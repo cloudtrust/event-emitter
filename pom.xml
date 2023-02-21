@@ -11,10 +11,50 @@
     </parent>
 
     <artifactId>keycloak-event-emitter-parent</artifactId>
+    <version>18.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
+    <scm>
+        <connection>scm:git:ssh://git@github.com/cloudtrust/event-emitter</connection>
+        <developerConnection>scm:git:ssh://git@github.com/cloudtrust/event-emitter</developerConnection>
+        <url>https://github.com/cloudtrust/event-emitter</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>keycloak-event-emitter</module>
         <module>keycloak-event-emitter-tests</module>
     </modules>
+    <distributionManagement>
+        <repository>
+            <id>project-release</id>
+            <url>https://artifactory.svc.elca.ch/artifactory/prj_cloudtrust_release</url>
+        </repository>
+        <snapshotRepository>
+            <id>project-snapshot</id>
+            <url>https://artifactory.svc.elca.ch/artifactory/prj_cloudtrust_snapshot</url>
+        </snapshotRepository>
+    </distributionManagement>
+    <repositories>
+        <repository>
+            <id>project-release</id>
+            <url>https://artifactory.svc.elca.ch/artifactory/prj_cloudtrust_release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>project-snapshot</id>
+            <url>https://artifactory.svc.elca.ch/artifactory/prj_cloudtrust_snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>
