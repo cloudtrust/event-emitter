@@ -81,11 +81,11 @@ public abstract class AbstractTest extends AbstractInKeycloakTest {
 
             if (!(username + ":" + password).equals(decodedToken)) {
                 logger.warnf("Event service received %s when expecting %s:%s", decodedToken, username, password);
-                exchange.setResponseCode(StatusCodes.FORBIDDEN);
+                exchange.setStatusCode(StatusCodes.FORBIDDEN);
                 return;
             }
 
-            exchange.setResponseCode(StatusCodes.OK);
+            exchange.setStatusCode(StatusCodes.OK);
             ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
             jsonReceived = IOUtils.toString(cis, StandardCharsets.UTF_8);
         }

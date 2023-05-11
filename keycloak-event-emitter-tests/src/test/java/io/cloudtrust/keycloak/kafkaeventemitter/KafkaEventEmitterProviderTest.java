@@ -8,7 +8,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.events.Event;
@@ -35,7 +34,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 @ExtendWith(KeycloakDeploy.class)
-public class KafkaEventEmitterProviderTest {
+class KafkaEventEmitterProviderTest {
     private static final String topicEvent = "test-event";
     private static final String topicAdminEvent = "test-admin-event";
     private static final String userId = "394b0730-628f-11ec-9211-0242ac120005";
@@ -63,7 +62,7 @@ public class KafkaEventEmitterProviderTest {
     }
 
     @Test
-    public void testEventFlatbufferFormatOutput() {
+    void testEventFlatbufferFormatOutput() {
         IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents = new LinkedBlockingQueue<>(50);
 
@@ -85,7 +84,7 @@ public class KafkaEventEmitterProviderTest {
     }
 
     @Test
-    public void testAdminEventFlatbufferFormatOutput() {
+    void testAdminEventFlatbufferFormatOutput() {
         IdGenerator idGenerator = new IdGenerator(1, 1);
         LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents = new LinkedBlockingQueue<>(50);
 
@@ -108,20 +107,21 @@ public class KafkaEventEmitterProviderTest {
     }
 
     @Test
-    public void testNoConnection() {
+    void testNoConnection() {
         IdGenerator idGenerator = new IdGenerator(1, 1);
-        MockProducer<String, String> stepMockProducer = new MockProducer<>(false, new StringSerializer(), new StringSerializer());
-        LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents = new LinkedBlockingQueue<>(50);
+        try (MockProducer<String, String> stepMockProducer = new MockProducer<>(false, new StringSerializer(), new StringSerializer())) {
+            LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents = new LinkedBlockingQueue<>(50);
 
-        KafkaEventEmitterState state = new KafkaEventEmitterState();
-        state.working();
-        KafkaEventEmitterProvider kafkaEventEmitterProvider = new KafkaEventEmitterProvider(keycloakSession, mockProducer, topicEvent, topicAdminEvent, idGenerator, pendingEvents, state, new ReentrantLock());
+            KafkaEventEmitterState state = new KafkaEventEmitterState();
+            state.working();
+            KafkaEventEmitterProvider kafkaEventEmitterProvider = new KafkaEventEmitterProvider(keycloakSession, mockProducer, topicEvent, topicAdminEvent, idGenerator, pendingEvents, state, new ReentrantLock());
 
-        stepMockProducer.errorNext(new RuntimeException("Test error"));
-        Event event = createEvent();
-        kafkaEventEmitterProvider.onEvent(event);
-        List<ProducerRecord<String, String>> recordList = mockProducer.history();
-        Assertions.assertEquals(1, recordList.size());
+            stepMockProducer.errorNext(new RuntimeException("Test error"));
+            Event event = createEvent();
+            kafkaEventEmitterProvider.onEvent(event);
+            List<ProducerRecord<String, String>> recordList = mockProducer.history();
+            Assertions.assertEquals(1, recordList.size());
+        }
     }
 
     private Event createEvent() {

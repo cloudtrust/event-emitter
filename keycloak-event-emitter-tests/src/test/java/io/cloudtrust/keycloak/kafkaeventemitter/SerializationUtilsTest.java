@@ -5,7 +5,6 @@ import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
 import io.cloudtrust.keycloak.customevent.IdentifiedAdminEvent;
 import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
@@ -19,12 +18,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class SerializationUtilsTest {
-
+class SerializationUtilsTest {
     private long UID = 123456789L;
 
     @Test
-    public void testEventToJson() {
+    void testEventToJson() {
         Event event = createEvent();
 
         try {
@@ -39,7 +37,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testEventMinimalToJson() {
+    void testEventMinimalToJson() {
         Event eventMinimal = createMinimalEvent();
         try {
             String jsonEvent = SerialisationUtils.toJson(new IdentifiedEvent(UID, eventMinimal));
@@ -53,7 +51,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testAdminEventToJson() {
+    void testAdminEventToJson() {
         try {
             String jsonEvent = SerialisationUtils.toJson(createExtendedAdminEvent());
             Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":\"realmId\",\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\",\"uid\":123456789,\"extAuthDetails\":{\"realmId\":\"authDetails-realmId\",\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\",\"username\":\"authDetails-username\"},\"details\":{\"user_id\":\"userid\",\"username\":\"username\"}}", jsonEvent);
@@ -63,7 +61,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testMinimalAdminEventToJson() {
+    void testMinimalAdminEventToJson() {
         try {
             String jsonEvent = SerialisationUtils.toJson(createMinimalExtendedAdminEvent());
             Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null,\"uid\":123456789,\"extAuthDetails\":null,\"details\":{}}", jsonEvent);
@@ -73,7 +71,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testEventToFlatbuffers() {
+    void testEventToFlatbuffers() {
         Event event = createEvent();
         ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedEvent(UID, event));
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
@@ -82,7 +80,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testMinimalEventToFlatbuffers() {
+    void testMinimalEventToFlatbuffers() {
         Event event = createMinimalEvent();
         ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedEvent(UID, event));
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
@@ -91,7 +89,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testAdminEventToFlatbuffers() {
+    void testAdminEventToFlatbuffers() {
         ExtendedAdminEvent adminEvent = createExtendedAdminEvent();
         ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
@@ -100,7 +98,7 @@ public class SerializationUtilsTest {
     }
 
     @Test
-    public void testMinimalAdminEventToFlatbuffers() {
+    void testMinimalAdminEventToFlatbuffers() {
         ExtendedAdminEvent adminEvent = createMinimalExtendedAdminEvent();
         ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);

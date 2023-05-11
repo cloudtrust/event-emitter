@@ -236,7 +236,7 @@ class EventEmitterProviderTest extends AbstractInKeycloakTest {
 
         @Override
         public void handleRequest(HttpServerExchange exchange) throws Exception {
-            exchange.setResponseCode(StatusCodes.OK);
+            exchange.setStatusCode(StatusCodes.OK);
             ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
             jsonReceived = IOUtils.toString(cis, StandardCharsets.UTF_8);
             counter++;
@@ -254,7 +254,7 @@ class EventEmitterProviderTest extends AbstractInKeycloakTest {
     static class HttpErrorHandler implements HttpHandler {
         @Override
         public void handleRequest(HttpServerExchange exchange) {
-            exchange.setResponseCode(StatusCodes.MULTIPLE_CHOICES);
+            exchange.setStatusCode(StatusCodes.MULTIPLE_CHOICES);
         }
     }
 

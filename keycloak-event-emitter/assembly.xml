@@ -13,17 +13,10 @@
             <filtered>true</filtered>
         </file>
         <file>
-            <source>module.xml</source>
-            <filtered>true</filtered>
+            <source>module.conf</source>
         </file>
     </files>
     <fileSets>
-        <fileSet>
-            <directory>${project.basedir}</directory>
-            <includes>
-                <include>lib-modules/**</include>
-            </includes>
-        </fileSet>
         <fileSet>
             <directory>${project.build.directory}</directory>
             <outputDirectory>target</outputDirectory>
@@ -32,4 +25,13 @@
             </includes>
         </fileSet>
     </fileSets>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>target/libs</outputDirectory>
+            <includes>
+                <include>org.apache.kafka:kafka-clients</include>
+                <include>com.google.flatbuffers:flatbuffers-java</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
 </assembly>
