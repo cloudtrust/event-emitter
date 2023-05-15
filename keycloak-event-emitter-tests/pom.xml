@@ -6,11 +6,11 @@
         <groupId>io.cloudtrust</groupId>
         <artifactId>kc-cloudtrust-testsuite</artifactId>
         <version>20.0.0</version>
-        <relativePath/>
+        <relativePath />
     </parent>
 
     <artifactId>keycloak-event-emitter-tests</artifactId>
-    <version>20.0.0-SNAPSHOT</version>
+    <version>20.0.0</version>
 
     <properties>
         <apache-cxf.version>3.4.1</apache-cxf.version>
@@ -128,4 +128,8 @@
             </plugin>
         </plugins>
     </build>
+
+  <scm>
+    <tag>20.0.0</tag>
+  </scm>
 </project>
