@@ -2,16 +2,29 @@
 
 package flatbuffers.events;
 
-import java.nio.*;
-import java.lang.*;
-import java.util.*;
-import com.google.flatbuffers.*;
+import com.google.flatbuffers.BaseVector;
+import com.google.flatbuffers.BooleanVector;
+import com.google.flatbuffers.ByteVector;
+import com.google.flatbuffers.Constants;
+import com.google.flatbuffers.DoubleVector;
+import com.google.flatbuffers.FlatBufferBuilder;
+import com.google.flatbuffers.FloatVector;
+import com.google.flatbuffers.IntVector;
+import com.google.flatbuffers.LongVector;
+import com.google.flatbuffers.ShortVector;
+import com.google.flatbuffers.StringVector;
+import com.google.flatbuffers.Struct;
+import com.google.flatbuffers.Table;
+import com.google.flatbuffers.UnionVector;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 @SuppressWarnings("unused")
 public final class AuthDetails extends Table {
+  public static void ValidateVersion() { Constants.FLATBUFFERS_24_3_25(); }
   public static AuthDetails getRootAsAuthDetails(ByteBuffer _bb) { return getRootAsAuthDetails(_bb, new AuthDetails()); }
   public static AuthDetails getRootAsAuthDetails(ByteBuffer _bb, AuthDetails obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public void __init(int _i, ByteBuffer _bb) { __reset(_i, _bb); }
   public AuthDetails __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public String realmId() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
@@ -36,7 +49,7 @@ public final class AuthDetails extends Table {
       int userIdOffset,
       int usernameOffset,
       int ipAddressOffset) {
-    builder.startObject(5);
+    builder.startTable(5);
     AuthDetails.addIpAddress(builder, ipAddressOffset);
     AuthDetails.addUsername(builder, usernameOffset);
     AuthDetails.addUserId(builder, userIdOffset);
@@ -45,15 +58,22 @@ public final class AuthDetails extends Table {
     return AuthDetails.endAuthDetails(builder);
   }
 
-  public static void startAuthDetails(FlatBufferBuilder builder) { builder.startObject(5); }
+  public static void startAuthDetails(FlatBufferBuilder builder) { builder.startTable(5); }
   public static void addRealmId(FlatBufferBuilder builder, int realmIdOffset) { builder.addOffset(0, realmIdOffset, 0); }
   public static void addClientId(FlatBufferBuilder builder, int clientIdOffset) { builder.addOffset(1, clientIdOffset, 0); }
   public static void addUserId(FlatBufferBuilder builder, int userIdOffset) { builder.addOffset(2, userIdOffset, 0); }
   public static void addUsername(FlatBufferBuilder builder, int usernameOffset) { builder.addOffset(3, usernameOffset, 0); }
   public static void addIpAddress(FlatBufferBuilder builder, int ipAddressOffset) { builder.addOffset(4, ipAddressOffset, 0); }
   public static int endAuthDetails(FlatBufferBuilder builder) {
-    int o = builder.endObject();
+    int o = builder.endTable();
     return o;
+  }
+
+  public static final class Vector extends BaseVector {
+    public Vector __assign(int _vector, int _element_size, ByteBuffer _bb) { __reset(_vector, _element_size, _bb); return this; }
+
+    public AuthDetails get(int j) { return get(new AuthDetails(), j); }
+    public AuthDetails get(AuthDetails obj, int j) {  return obj.__assign(__indirect(__element(j), bb), bb); }
   }
 }
 

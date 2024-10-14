@@ -2,6 +2,7 @@
 
 package flatbuffers.events;
 
+@SuppressWarnings("unused")
 public final class ResourceType {
   private ResourceType() { }
   public static final byte REALM = 0;
