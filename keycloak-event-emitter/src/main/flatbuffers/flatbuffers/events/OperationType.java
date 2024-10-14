@@ -2,6 +2,7 @@
 
 package flatbuffers.events;
 
+@SuppressWarnings("unused")
 public final class OperationType {
   private OperationType() { }
   public static final byte CREATE = 0;

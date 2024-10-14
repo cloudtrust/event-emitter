@@ -2,16 +2,29 @@
 
 package flatbuffers.events;
 
-import java.nio.*;
-import java.lang.*;
-import java.util.*;
-import com.google.flatbuffers.*;
+import com.google.flatbuffers.BaseVector;
+import com.google.flatbuffers.BooleanVector;
+import com.google.flatbuffers.ByteVector;
+import com.google.flatbuffers.Constants;
+import com.google.flatbuffers.DoubleVector;
+import com.google.flatbuffers.FlatBufferBuilder;
+import com.google.flatbuffers.FloatVector;
+import com.google.flatbuffers.IntVector;
+import com.google.flatbuffers.LongVector;
+import com.google.flatbuffers.ShortVector;
+import com.google.flatbuffers.StringVector;
+import com.google.flatbuffers.Struct;
+import com.google.flatbuffers.Table;
+import com.google.flatbuffers.UnionVector;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 @SuppressWarnings("unused")
 public final class Tuple extends Table {
+  public static void ValidateVersion() { Constants.FLATBUFFERS_24_3_25(); }
   public static Tuple getRootAsTuple(ByteBuffer _bb) { return getRootAsTuple(_bb, new Tuple()); }
   public static Tuple getRootAsTuple(ByteBuffer _bb, Tuple obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public void __init(int _i, ByteBuffer _bb) { __reset(_i, _bb); }
   public Tuple __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public String key() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
@@ -24,18 +37,25 @@ public final class Tuple extends Table {
   public static int createTuple(FlatBufferBuilder builder,
       int keyOffset,
       int valueOffset) {
-    builder.startObject(2);
+    builder.startTable(2);
     Tuple.addValue(builder, valueOffset);
     Tuple.addKey(builder, keyOffset);
     return Tuple.endTuple(builder);
   }
 
-  public static void startTuple(FlatBufferBuilder builder) { builder.startObject(2); }
+  public static void startTuple(FlatBufferBuilder builder) { builder.startTable(2); }
   public static void addKey(FlatBufferBuilder builder, int keyOffset) { builder.addOffset(0, keyOffset, 0); }
   public static void addValue(FlatBufferBuilder builder, int valueOffset) { builder.addOffset(1, valueOffset, 0); }
   public static int endTuple(FlatBufferBuilder builder) {
-    int o = builder.endObject();
+    int o = builder.endTable();
     return o;
+  }
+
+  public static final class Vector extends BaseVector {
+    public Vector __assign(int _vector, int _element_size, ByteBuffer _bb) { __reset(_vector, _element_size, _bb); return this; }
+
+    public Tuple get(int j) { return get(new Tuple(), j); }
+    public Tuple get(Tuple obj, int j) {  return obj.__assign(__indirect(__element(j), bb), bb); }
   }
 }
 
