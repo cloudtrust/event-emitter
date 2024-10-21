@@ -2,16 +2,29 @@
 
 package flatbuffers.events;
 
-import java.nio.*;
-import java.lang.*;
-import java.util.*;
-import com.google.flatbuffers.*;
+import com.google.flatbuffers.BaseVector;
+import com.google.flatbuffers.BooleanVector;
+import com.google.flatbuffers.ByteVector;
+import com.google.flatbuffers.Constants;
+import com.google.flatbuffers.DoubleVector;
+import com.google.flatbuffers.FlatBufferBuilder;
+import com.google.flatbuffers.FloatVector;
+import com.google.flatbuffers.IntVector;
+import com.google.flatbuffers.LongVector;
+import com.google.flatbuffers.ShortVector;
+import com.google.flatbuffers.StringVector;
+import com.google.flatbuffers.Struct;
+import com.google.flatbuffers.Table;
+import com.google.flatbuffers.UnionVector;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 @SuppressWarnings("unused")
 public final class Event extends Table {
+  public static void ValidateVersion() { Constants.FLATBUFFERS_24_3_25(); }
   public static Event getRootAsEvent(ByteBuffer _bb) { return getRootAsEvent(_bb, new Event()); }
   public static Event getRootAsEvent(ByteBuffer _bb, Event obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public void __init(int _i, ByteBuffer _bb) { __reset(_i, _bb); }
   public Event __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public long uid() { int o = __offset(4); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
@@ -38,6 +51,8 @@ public final class Event extends Table {
   public Tuple details(int j) { return details(new Tuple(), j); }
   public Tuple details(Tuple obj, int j) { int o = __offset(22); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
   public int detailsLength() { int o = __offset(22); return o != 0 ? __vector_len(o) : 0; }
+  public Tuple.Vector detailsVector() { return detailsVector(new Tuple.Vector()); }
+  public Tuple.Vector detailsVector(Tuple.Vector obj) { int o = __offset(22); return o != 0 ? obj.__assign(__vector(o), 4, bb) : null; }
 
   public static int createEvent(FlatBufferBuilder builder,
       long uid,
@@ -50,7 +65,7 @@ public final class Event extends Table {
       int ipAddressOffset,
       int errorOffset,
       int detailsOffset) {
-    builder.startObject(10);
+    builder.startTable(10);
     Event.addTime(builder, time);
     Event.addUid(builder, uid);
     Event.addDetails(builder, detailsOffset);
@@ -64,7 +79,7 @@ public final class Event extends Table {
     return Event.endEvent(builder);
   }
 
-  public static void startEvent(FlatBufferBuilder builder) { builder.startObject(10); }
+  public static void startEvent(FlatBufferBuilder builder) { builder.startTable(10); }
   public static void addUid(FlatBufferBuilder builder, long uid) { builder.addLong(0, uid, 0L); }
   public static void addTime(FlatBufferBuilder builder, long time) { builder.addLong(1, time, 0L); }
   public static void addType(FlatBufferBuilder builder, byte type) { builder.addByte(2, type, 0); }
@@ -78,8 +93,15 @@ public final class Event extends Table {
   public static int createDetailsVector(FlatBufferBuilder builder, int[] data) { builder.startVector(4, data.length, 4); for (int i = data.length - 1; i >= 0; i--) builder.addOffset(data[i]); return builder.endVector(); }
   public static void startDetailsVector(FlatBufferBuilder builder, int numElems) { builder.startVector(4, numElems, 4); }
   public static int endEvent(FlatBufferBuilder builder) {
-    int o = builder.endObject();
+    int o = builder.endTable();
     return o;
+  }
+
+  public static final class Vector extends BaseVector {
+    public Vector __assign(int _vector, int _element_size, ByteBuffer _bb) { __reset(_vector, _element_size, _bb); return this; }
+
+    public Event get(int j) { return get(new Event(), j); }
+    public Event get(Event obj, int j) {  return obj.__assign(__indirect(__element(j), bb), bb); }
   }
 }
 
