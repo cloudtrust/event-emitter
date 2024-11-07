@@ -1,8 +1,8 @@
 package flatbuffers.events;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.events.EventType;
-import org.junit.jupiter.api.Assertions;
 
 public class EventTypeTest {
 
