@@ -102,9 +102,9 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         }
         // add username if resource is a user
         String resourcePath = extendedAdminEvent.getResourcePath();
-        if (resourcePath != null && resourcePath.startsWith("users")) {
+        if (resourcePath != null && resourcePath.contains("users")) {
             // parse userID
-            String pattern = "^users/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$";
+            String pattern = ".*users/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$";
             Pattern r = Pattern.compile(pattern);
             Matcher m = r.matcher(resourcePath);
             if (m.matches()) {
