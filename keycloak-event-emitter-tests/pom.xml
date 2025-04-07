@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>keycloak-event-emitter-tests</artifactId>
-    <version>20.1.0</version>
+    <version>20.1.1-SNAPSHOT</version>
 
     <properties>
         <apache-cxf.version>3.4.1</apache-cxf.version>
@@ -128,8 +128,4 @@
             </plugin>
         </plugins>
     </build>
-
-  <scm>
-    <tag>20.1.0</tag>
-  </scm>
 </project>
