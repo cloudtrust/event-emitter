@@ -1,6 +1,6 @@
-package io.cloudtrust.keycloak;
+package io.cloudtrust.keycloak.eventemitter;
 
-import io.cloudtrust.keycloak.eventemitter.EventEmitterProviderFactory;
+import io.cloudtrust.keycloak.eventemitter.kafkaemitter.KafkaEventEmitterProviderFactory;
 import io.cloudtrust.keycloak.test.AbstractInKeycloakTest;
 import io.cloudtrust.keycloak.test.http.HttpServerManager;
 import io.cloudtrust.keycloak.test.pages.LoginPage;
@@ -8,6 +8,7 @@ import io.cloudtrust.keycloak.test.pages.WebPage;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.StatusCodes;
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -21,7 +22,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.xnio.streams.ChannelInputStream;
 
-import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.LinkedList;
@@ -97,7 +97,7 @@ public abstract class AbstractTest extends AbstractInKeycloakTest {
 
     private void setupTestRealm(RealmResource testRealm) {
         RealmRepresentation realm = testRealm.toRepresentation();
-        realm.getEventsListeners().add(EventEmitterProviderFactory.PROVIDER_ID);
+        realm.getEventsListeners().add(KafkaEventEmitterProviderFactory.PROVIDER_ID);
         testRealm.update(realm);
 
         CredentialRepresentation credentialPass = new CredentialRepresentation();
@@ -118,5 +118,4 @@ public abstract class AbstractTest extends AbstractInKeycloakTest {
             }
         }
     }
-
 }
