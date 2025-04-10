@@ -1,4 +1,4 @@
-package io.cloudtrust.keycloak.customevent;
+package io.cloudtrust.keycloak.eventemitter.customevent;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.cloudtrust.keycloak.eventemitter.HasUid;
