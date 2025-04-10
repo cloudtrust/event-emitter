@@ -32,13 +32,13 @@ public final class AdminEvent extends Table {
   public String realmId() { int o = __offset(8); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer realmIdAsByteBuffer() { return __vector_as_bytebuffer(8, 1); }
   public ByteBuffer realmIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 8, 1); }
-  public AuthDetails authDetails() { return authDetails(new AuthDetails()); }
-  public AuthDetails authDetails(AuthDetails obj) { int o = __offset(10); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
-  public Tuple details(int j) { return details(new Tuple(), j); }
-  public Tuple details(Tuple obj, int j) { int o = __offset(12); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
+  public flatbuffers.events.AuthDetails authDetails() { return authDetails(new flatbuffers.events.AuthDetails()); }
+  public flatbuffers.events.AuthDetails authDetails(flatbuffers.events.AuthDetails obj) { int o = __offset(10); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
+  public flatbuffers.events.Tuple details(int j) { return details(new flatbuffers.events.Tuple(), j); }
+  public flatbuffers.events.Tuple details(flatbuffers.events.Tuple obj, int j) { int o = __offset(12); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
   public int detailsLength() { int o = __offset(12); return o != 0 ? __vector_len(o) : 0; }
-  public Tuple.Vector detailsVector() { return detailsVector(new Tuple.Vector()); }
-  public Tuple.Vector detailsVector(Tuple.Vector obj) { int o = __offset(12); return o != 0 ? obj.__assign(__vector(o), 4, bb) : null; }
+  public flatbuffers.events.Tuple.Vector detailsVector() { return detailsVector(new flatbuffers.events.Tuple.Vector()); }
+  public flatbuffers.events.Tuple.Vector detailsVector(flatbuffers.events.Tuple.Vector obj) { int o = __offset(12); return o != 0 ? obj.__assign(__vector(o), 4, bb) : null; }
   public byte resourceType() { int o = __offset(14); return o != 0 ? bb.get(o + bb_pos) : 0; }
   public byte operationType() { int o = __offset(16); return o != 0 ? bb.get(o + bb_pos) : 0; }
   public String resourcePath() { int o = __offset(18); return o != 0 ? __string(o + bb_pos) : null; }

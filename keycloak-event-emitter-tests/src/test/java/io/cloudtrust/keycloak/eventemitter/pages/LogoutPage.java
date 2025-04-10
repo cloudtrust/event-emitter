@@ -1,4 +1,4 @@
-package io.cloudtrust.keycloak.pages;
+package io.cloudtrust.keycloak.eventemitter.pages;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;

@@ -1,11 +1,12 @@
-package io.cloudtrust.keycloak.kafkaeventemitter;
+package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
-import com.google.common.base.Strings;
-import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
-import io.cloudtrust.keycloak.customevent.ExtendedAuthDetails;
-import io.cloudtrust.keycloak.customevent.IdentifiedAdminEvent;
-import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
-import io.cloudtrust.keycloak.snowflake.IdGenerator;
+import io.cloudtrust.keycloak.eventemitter.SerializationUtils;
+import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
+import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAuthDetails;
+import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedAdminEvent;
+import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedEvent;
+import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -60,7 +61,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
 
         // Flatbuffer serialization
-        ByteBuffer buffer = SerialisationUtils.toFlat(identifiedEvent);
+        ByteBuffer buffer = SerializationUtils.toFlat(identifiedEvent);
 
         produceEvent(buffer, identifiedEvent.getUserId(), eventTopic);
     }
@@ -72,7 +73,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         ExtendedAdminEvent customAdminEvent = completeAdminEventAttributes(identifiedAdminEvent);
 
         // Flatbuffer serialization
-        ByteBuffer buffer = SerialisationUtils.toFlat(customAdminEvent);
+        ByteBuffer buffer = SerializationUtils.toFlat(customAdminEvent);
 
         produceEvent(buffer, customAdminEvent.getAuthDetails().getUserId(), adminEventTopic);
     }
@@ -88,7 +89,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
             event.setDetails(new HashMap<>());
         }
         String eventUsername = event.getDetails().get(Details.USERNAME);
-        if (!Strings.isNullOrEmpty(event.getUserId()) && Strings.isNullOrEmpty(eventUsername)) {
+        if (StringUtils.isNotBlank(event.getUserId()) && StringUtils.isBlank(eventUsername)) {
             findUser(event.getUserId(), event.getRealmId(), u -> event.getDetails().put(Details.USERNAME, u.getUsername()));
         }
     }
@@ -97,7 +98,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         ExtendedAdminEvent extendedAdminEvent = new ExtendedAdminEvent(adminEvent);
         // add always missing agent username
         ExtendedAuthDetails extendedAuthDetails = extendedAdminEvent.getAuthDetails();
-        if (!Strings.isNullOrEmpty(extendedAuthDetails.getUserId())) {
+        if (StringUtils.isNotBlank(extendedAuthDetails.getUserId())) {
             findUser(extendedAuthDetails.getUserId(), extendedAuthDetails.getRealmId(), u -> extendedAuthDetails.setUsername(u.getUsername()));
         }
         // add username if resource is a user

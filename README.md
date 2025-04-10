@@ -6,7 +6,7 @@ The aim of this module is to send those Events and AdminEvents to another server
 
 ## Compilation
 
-Java 8 is required (Java 9+ is not supported yet).
+Java 21 is required.
 
 ### Build and Tests
 This project 2 modules, one with the event emitter code (could contain unit tests) and one for integration tests using a parent inherited from Keycloak tests for simplifying the
@@ -14,13 +14,6 @@ POM content.
 
 The integration tests rely on the arquillian-based Keycloak test framework. As Keycloak does not publish publicly
 the related jars for testing, one needs to manually build them so that they are available for maven for testing.
-
-For building these tests-jars, you need to:
-* clone the official Keycloak repository (https://github.com/keycloak/keycloak)
-* checkout the tag of the Keycloak version related to the version of the event-emitter module
-* execute `mvn clean install -DskipTests` in the Keycloak repository to build the jars and put them in your maven repository
-
-Once these test-jars are built, the event-emitter module can be built.
 
 ### Binary
 The build produces the JAR of the module, along with a TAR.GZ file that contains the dependencies to be installed
@@ -40,43 +33,6 @@ tar -zxf keycloak-event-emitter-<version>-dist.tar.gz --directory <PATH_TO_KEYCL
 chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/event-emitter
 ```
 
-For enabling the newly created layer, edit __layers.conf__:
-```Bash
-layers=keycloak,event-emitter
-```
-
-
-## Enable & Configure
-
-In __standalone.xml__, add the new module and configure it
-
-```xml
-<!--[...]-->
-<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
-    <web-context>auth</web-context>
-    <providers>
-        <!--[...]-->
-        <provider>module:io.cloudtrust.keycloak.eventemitter</provider>
-        <!--[...]-->
-    </providers>
-    <!--[...]-->
-    <spi name="eventsListener">
-        <provider name="event-emitter" enabled="true">
-            <properties>
-               <property name="format" value="JSON"/>
-               <property name="targetUri" value="http://localhost:8888/event/receiver"/>
-               <property name="bufferCapacity" value="10"/>
-               <property name="keycloakId" value="1"/>
-               <property name="datacenterId" value="1"/>
-               <property name="connectTimeoutMillis" value="500"/>
-               <property name="connectionRequestTimeoutMillis" value="500"/>
-               <property name="socketTimeoutMillis" value="500"/>
-            </properties>
-        </provider>
-    </spi>
-    <!--[...]-->
-</subsystem>
-```
 
 Configuration parameters:
 * format: JSON or FLATBUFFER

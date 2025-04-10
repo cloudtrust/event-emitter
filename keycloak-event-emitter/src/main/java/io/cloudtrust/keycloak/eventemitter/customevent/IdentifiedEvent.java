@@ -1,4 +1,4 @@
-package io.cloudtrust.keycloak.customevent;
+package io.cloudtrust.keycloak.eventemitter.customevent;
 
 
 import io.cloudtrust.keycloak.eventemitter.HasUid;

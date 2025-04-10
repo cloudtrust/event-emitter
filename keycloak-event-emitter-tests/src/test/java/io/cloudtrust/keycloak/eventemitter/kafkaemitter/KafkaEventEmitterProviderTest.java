@@ -1,15 +1,12 @@
-package io.cloudtrust.keycloak.kafkaeventemitter;
+package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
-
-import io.cloudtrust.keycloak.snowflake.IdGenerator;
-import io.cloudtrust.keycloak.test.container.KeycloakDeploy;
+import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
@@ -33,7 +30,6 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-@ExtendWith(KeycloakDeploy.class)
 class KafkaEventEmitterProviderTest {
     private static final String topicEvent = "test-event";
     private static final String topicAdminEvent = "test-admin-event";

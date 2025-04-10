@@ -1,8 +1,11 @@
-package io.cloudtrust.keycloak.snowflake;
+package io.cloudtrust.keycloak.eventemitter.snowflake;
 
 import java.util.HashSet;
 import java.util.Set;
 
+import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
+import io.cloudtrust.keycloak.eventemitter.snowflake.IdGeneratorConfig;
+import io.cloudtrust.keycloak.eventemitter.snowflake.InvalidSystemClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

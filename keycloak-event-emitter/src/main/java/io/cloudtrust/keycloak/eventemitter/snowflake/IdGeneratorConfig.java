@@ -1,4 +1,4 @@
-package io.cloudtrust.keycloak.snowflake;
+package io.cloudtrust.keycloak.eventemitter.snowflake;
 
 
 /**
