@@ -48,11 +48,11 @@ public final class Event extends Table {
   public String error() { int o = __offset(20); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer errorAsByteBuffer() { return __vector_as_bytebuffer(20, 1); }
   public ByteBuffer errorInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 20, 1); }
-  public Tuple details(int j) { return details(new Tuple(), j); }
-  public Tuple details(Tuple obj, int j) { int o = __offset(22); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
+  public flatbuffers.events.Tuple details(int j) { return details(new flatbuffers.events.Tuple(), j); }
+  public flatbuffers.events.Tuple details(flatbuffers.events.Tuple obj, int j) { int o = __offset(22); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
   public int detailsLength() { int o = __offset(22); return o != 0 ? __vector_len(o) : 0; }
-  public Tuple.Vector detailsVector() { return detailsVector(new Tuple.Vector()); }
-  public Tuple.Vector detailsVector(Tuple.Vector obj) { int o = __offset(22); return o != 0 ? obj.__assign(__vector(o), 4, bb) : null; }
+  public flatbuffers.events.Tuple.Vector detailsVector() { return detailsVector(new flatbuffers.events.Tuple.Vector()); }
+  public flatbuffers.events.Tuple.Vector detailsVector(flatbuffers.events.Tuple.Vector obj) { int o = __offset(22); return o != 0 ? obj.__assign(__vector(o), 4, bb) : null; }
 
   public static int createEvent(FlatBufferBuilder builder,
       long uid,

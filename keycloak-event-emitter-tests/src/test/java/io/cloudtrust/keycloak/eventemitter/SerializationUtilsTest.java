@@ -1,10 +1,10 @@
 package io.cloudtrust.keycloak.eventemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.cloudtrust.keycloak.customevent.ExtendedAdminEvent;
-import io.cloudtrust.keycloak.customevent.ExtendedAuthDetails;
-import io.cloudtrust.keycloak.customevent.IdentifiedAdminEvent;
-import io.cloudtrust.keycloak.customevent.IdentifiedEvent;
+import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
+import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAuthDetails;
+import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedAdminEvent;
+import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedEvent;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.junit.jupiter.api.Assertions;
@@ -22,72 +22,43 @@ import java.util.HashMap;
 import java.util.Map;
 
 class SerializationUtilsTest {
-    private static final long UID = 123456789L;
+    private long UID = 123456789L;
 
     @Test
-    void testContainerToJson() {
-        Container c = new Container("Event", "obj");
-        try {
-            String jsonEvent = SerialisationUtils.toJson(c);
-            Assertions.assertEquals("{\"type\":\"Event\",\"obj\":\"obj\"}", jsonEvent);
-        } catch (JsonProcessingException e) {
-            Assertions.fail(e);
-        }
-    }
-
-    @Test
-    void testEventToJson() {
+    void testEventToJson() throws JsonProcessingException {
         Event event = createEvent();
-
-        try {
-            String jsonEvent = SerialisationUtils.toJson(new IdentifiedEvent(UID, event));
-            Assertions.assertEquals("{\"id\":null,\"time\":120000,\"type\":\"CLIENT_LOGIN\"," +
-                    "\"realmId\":\"realmId\",\"clientId\":\"clientId\",\"userId\":\"userId\"," +
-                    "\"sessionId\":\"sessionId\",\"ipAddress\":\"127.0.0.1\",\"error\":\"Error\"," +
-                    "\"details\":{\"detailsKey2\":\"detailsValue2\",\"detailsKey1\":\"detailValue1\"},\"uid\":123456789}", jsonEvent);
-        } catch (JsonProcessingException e) {
-        	Assertions.fail();
-        }
+        String jsonEvent = SerializationUtils.toJson(new IdentifiedEvent(UID, event));
+        Assertions.assertEquals("{\"id\":null,\"time\":120000,\"type\":\"CLIENT_LOGIN\"," +
+                "\"realmId\":\"realmId\",\"realmName\":null,\"clientId\":\"clientId\",\"userId\":\"userId\"," +
+                "\"sessionId\":\"sessionId\",\"ipAddress\":\"127.0.0.1\",\"error\":\"Error\"," +
+                "\"details\":{\"detailsKey2\":\"detailsValue2\",\"detailsKey1\":\"detailValue1\"},\"uid\":123456789}", jsonEvent);
     }
 
     @Test
-    void testEventMinimalToJson() {
+    void testEventMinimalToJson() throws JsonProcessingException {
         Event eventMinimal = createMinimalEvent();
-        try {
-            String jsonEvent = SerialisationUtils.toJson(new IdentifiedEvent(UID, eventMinimal));
-            Assertions.assertEquals("{\"id\":null,\"time\":120000,\"type\":\"CLIENT_LOGIN\"," +
-                    "\"realmId\":null,\"clientId\":null,\"userId\":null,\"sessionId\":null," +
-                    "\"ipAddress\":null,\"error\":null,\"details\":null,\"uid\":123456789}", jsonEvent);
-        } catch (JsonProcessingException e) {
-        	Assertions.fail();
-        }
-
+        String jsonEvent = SerializationUtils.toJson(new IdentifiedEvent(UID, eventMinimal));
+        Assertions.assertEquals("{\"id\":null,\"time\":120000,\"type\":\"CLIENT_LOGIN\"," +
+                "\"realmId\":null,\"realmName\":null,\"clientId\":null,\"userId\":null,\"sessionId\":null," +
+                "\"ipAddress\":null,\"error\":null,\"details\":null,\"uid\":123456789}", jsonEvent);
     }
 
     @Test
-    void testAdminEventToJson() {
-        try {
-            String jsonEvent = SerialisationUtils.toJson(createExtendedAdminEvent());
-            Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":\"realmId\",\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\",\"uid\":123456789,\"extAuthDetails\":{\"realmId\":\"authDetails-realmId\",\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\",\"username\":\"authDetails-username\"},\"details\":{\"user_id\":\"userid\",\"username\":\"username\"}}", jsonEvent);
-        } catch (JsonProcessingException e) {
-        	Assertions.fail();
-        }
+    void testAdminEventToJson() throws JsonProcessingException {
+        String jsonEvent = SerializationUtils.toJson(createExtendedAdminEvent());
+        Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":\"realmId\",\"realmName\":null,\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\",\"uid\":123456789,\"extAuthDetails\":{\"realmId\":\"authDetails-realmId\",\"realmName\":null,\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\",\"username\":\"authDetails-username\"},\"details\":{\"user_id\":\"userid\",\"username\":\"username\"}}", jsonEvent);
     }
 
     @Test
-    void testMinimalAdminEventToJson() {
-        try {
-            String jsonEvent = SerialisationUtils.toJson(createMinimalExtendedAdminEvent());
-            Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null,\"uid\":123456789,\"extAuthDetails\":null,\"details\":{}}", jsonEvent);
-        } catch (JsonProcessingException e) {
-        	Assertions.fail();
-        }
+    void testMinimalAdminEventToJson() throws JsonProcessingException {
+        String jsonEvent = SerializationUtils.toJson(createMinimalExtendedAdminEvent());
+        Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":null,\"realmName\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null,\"uid\":123456789,\"extAuthDetails\":null,\"details\":{}}", jsonEvent);
     }
 
     @Test
     void testEventToFlatbuffers() {
         Event event = createEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedEvent(UID, event));
+        ByteBuffer buffer = SerializationUtils.toFlat(new IdentifiedEvent(UID, event));
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
         Assertions.assertTrue(equals(event, deserializedEvent));
         Assertions.assertEquals(UID, deserializedEvent.uid());
@@ -96,7 +67,7 @@ class SerializationUtilsTest {
     @Test
     void testMinimalEventToFlatbuffers() {
         Event event = createMinimalEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(new IdentifiedEvent(UID, event));
+        ByteBuffer buffer = SerializationUtils.toFlat(new IdentifiedEvent(UID, event));
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
         Assertions.assertTrue(equals(event, deserializedEvent));
         Assertions.assertEquals(UID, deserializedEvent.uid());
@@ -105,7 +76,7 @@ class SerializationUtilsTest {
     @Test
     void testAdminEventToFlatbuffers() {
         ExtendedAdminEvent adminEvent = createExtendedAdminEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
+        ByteBuffer buffer = SerializationUtils.toFlat(adminEvent);
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
         Assertions.assertTrue(equals(adminEvent, deserializedAdminEvent));
         Assertions.assertEquals(UID, deserializedAdminEvent.uid());
@@ -114,7 +85,7 @@ class SerializationUtilsTest {
     @Test
     void testMinimalAdminEventToFlatbuffers() {
         ExtendedAdminEvent adminEvent = createMinimalExtendedAdminEvent();
-        ByteBuffer buffer = SerialisationUtils.toFlat(adminEvent);
+        ByteBuffer buffer = SerializationUtils.toFlat(adminEvent);
         flatbuffers.events.AdminEvent deserializedAdminEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(buffer);
         Assertions.assertTrue(equals(adminEvent, deserializedAdminEvent));
         Assertions.assertEquals(UID, deserializedAdminEvent.uid());
@@ -202,7 +173,7 @@ class SerializationUtilsTest {
         int adminEventResourceType = adminEvent.getResourceType() == null ? 0 : adminEvent.getResourceType().ordinal();
         int adminEventOperationType = adminEvent.getOperationType() == null ? 0 : adminEvent.getOperationType().ordinal();
         int adminEventDetailsSize = adminEvent.getDetails() == null ? 0 : adminEvent.getDetails().size();
-        new EqualsBuilder()
+        return new EqualsBuilder()
                 .append(adminEvent.getTime(), adminEventFlat.time())
                 .append(adminEvent.getRealmId(), adminEventFlat.realmId())
                 .appendSuper(equals(adminEvent.getAuthDetails(), adminEventFlat.authDetails()))
@@ -213,8 +184,6 @@ class SerializationUtilsTest {
                 .append(adminEventDetailsSize, adminEventFlat.detailsLength())
                 .append(adminEvent.getError(), adminEventFlat.error())
                 .build();
-
-        return true;
     }
 
     private static boolean equals(ExtendedAuthDetails adminEventDetails, flatbuffers.events.AuthDetails adminEventFlatDetails) {

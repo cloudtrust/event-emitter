@@ -1,4 +1,4 @@
-package io.cloudtrust.keycloak.kafkaeventemitter;
+package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
 public class KafkaEventEmitterState {
     private state currentState;

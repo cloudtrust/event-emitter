@@ -1,12 +1,12 @@
-package io.cloudtrust.keycloak.kafkaeventemitter;
+package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
-import io.cloudtrust.keycloak.snowflake.IdGenerator;
+import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.config.SaslConfigs;
-import org.apache.kafka.common.security.oauthbearer.secured.OAuthBearerLoginCallbackHandler;
+import org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginCallbackHandler;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -26,8 +26,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class KafkaEventEmitterProviderFactory implements EventListenerProviderFactory, ServerInfoAwareProviderFactory {
     private static final Logger logger = Logger.getLogger(KafkaEventEmitterProviderFactory.class);
 
+    public static final String PROVIDER_ID = "kafka-event-emitter";
+
     private static final String PROVIDER_NAME = "Kafka Event Emitter";
-    private static final String PROVIDER_ID = "kafka-event-emitter";
     private static final String PROVIDER_VERSION = "1.0";
 
     private static final String SECURITY_PROTOCOL_CONFIG = "security.protocol";
@@ -61,7 +62,7 @@ public class KafkaEventEmitterProviderFactory implements EventListenerProviderFa
     public EventListenerProvider create(KeycloakSession session) {
         if (state.isInitialized()) {
             state.starting();
-            producer = new KafkaProducer<String, String>(kafkaProperties);
+            producer = new KafkaProducer<>(kafkaProperties);
         }
         return new KafkaEventEmitterProvider(session, producer, eventTopic, adminEventTopic, idGenerator, pendingEvents, state, stateLock);
     }
@@ -95,7 +96,7 @@ public class KafkaEventEmitterProviderFactory implements EventListenerProviderFa
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        // Nothing to initialize
     }
 
     @Override
