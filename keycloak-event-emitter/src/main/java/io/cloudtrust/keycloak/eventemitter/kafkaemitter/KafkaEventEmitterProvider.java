@@ -38,8 +38,8 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
     private final IdGenerator idGenerator;
     private final LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents;
 
-    private KafkaEventEmitterState state;
-    private Lock stateLock;
+    private final KafkaEventEmitterState state;
+    private final Lock stateLock;
 
     KafkaEventEmitterProvider(KeycloakSession keycloakSession, Producer<String, String> producer, String eventTopic,
                               String adminEventTopic, IdGenerator idGenerator,

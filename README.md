@@ -9,7 +9,7 @@ The aim of this module is to send those Events and AdminEvents to another server
 Java 21 is required.
 
 ### Build and Tests
-This project 2 modules, one with the event emitter code (could contain unit tests) and one for integration tests using a parent inherited from Keycloak tests for simplifying the
+This project contains 2 modules, one with the event emitter code (could contain unit tests) and one for integration tests using a parent inherited from Keycloak tests for simplifying the
 POM content.
 
 The integration tests rely on the arquillian-based Keycloak test framework. As Keycloak does not publish publicly
@@ -33,9 +33,7 @@ tar -zxf keycloak-event-emitter-<version>-dist.tar.gz --directory <PATH_TO_KEYCL
 chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/event-emitter
 ```
 
-
-Configuration parameters:
-* format: JSON or FLATBUFFER
+Configuration parameters of HTTP Event Emitter:
 * targetUri: server endpoint where to send the serialized events
 * bufferCapacity: window size of events kept in memory if failure occurs
 * keycloakId: configuration parameter for snowflake unique ID generation, id of the keycloak instance
@@ -44,13 +42,23 @@ Configuration parameters:
 * connectionRequestTimeoutMillis: timeout in milliseconds used when requesting a connection from the connection manager. Parameter is optional
 * socketTimeoutMillis: socket timeout (SO_TIMEOUT) in milliseconds. Parameter is optional
 
-For FLATBUFFER format, the serialized event in wrapped in a JSON to transmit type information. The wrapper has two keys, 'type' which is 'Event' or 'AdminEvent' and 'obj' which is the flatbuffer in base64 format.
+Configuration parameters of Kafka Event Emitter:
+* bufferCapacity: window size of events kept in memory if failure occurs
+* clientId Kafka client ID
+* boostrapServers the list of Kafka brokers
+* eventTopic: name of the topic where events will be sent
+* adminEventTopic: name of the topic where admin events will be sent
+* securityProtocol: security protocol to use inside kafka
+* saslOauthbearerTokenEndpointUrl the URL of the token endpoint
+* saslMechanism the SASL mode used by Kafka
+* keycloakId: configuration parameter for snowflake unique ID generation, id of the keycloak instance
+* datacenterId: configuration parameter for snowflake unique ID generation, id of the datacenter
 
 All parameters are mandatory, if any of them is invalid or missing keycloak fails to start with a error message in the log about the cause.
 
 After file edition, restart keycloak instance.
 
-Finally, to make the event emitter functional we hate to register it via the admin console.
+Finally, to make the event emitter functional we have to register it via the admin console.
 In Manage - Events, go to Config tab and add event-emitter among the Event listeners.
 
 Note that configuration parameters can be seen in Server Info, tab Providers.
