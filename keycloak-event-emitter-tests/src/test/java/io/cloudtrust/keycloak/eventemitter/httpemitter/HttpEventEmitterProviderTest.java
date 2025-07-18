@@ -79,7 +79,7 @@ class HttpEventEmitterProviderTest {
     private static final int LISTEN_PORT = 9994;
     private static final String TARGET = "http://localhost:" + LISTEN_PORT + "/test";
     private static final int BUFFER_CAPACITY = 3;
-    private static final String AGW_ID = "test-agw";
+    private static final String IDP_ID = "test-idp";
 
     private static final String username = "toto";
     private static final String password = "passwordverylongandhardtoguess";
@@ -160,7 +160,7 @@ class HttpEventEmitterProviderTest {
             LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
             LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
             HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, AGW_ID);
+                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
 
             Event event = createEvent();
             HttpEventEmitterProvider.onEvent(event);
@@ -175,7 +175,7 @@ class HttpEventEmitterProviderTest {
             Assertions.assertEquals(event.getTime(), receivedEvent.time());
             Assertions.assertEquals(event.getType().ordinal(), receivedEvent.type());
             Assertions.assertEquals(event.getClientId(), receivedEvent.clientId());
-            Assertions.assertEquals(handler.getHeader("AGW-ID"), AGW_ID);
+            Assertions.assertEquals(handler.getHeader("IDP-ID"), IDP_ID);
         });
     }
 
@@ -188,7 +188,7 @@ class HttpEventEmitterProviderTest {
             LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
             LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
             HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, AGW_ID);
+                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
 
             AdminEvent event = createAdminEvent();
             HttpEventEmitterProvider.onEvent(event, true);
@@ -203,7 +203,7 @@ class HttpEventEmitterProviderTest {
             Assertions.assertEquals(event.getTime(), receivedEvent.time());
             Assertions.assertEquals(event.getOperationType().ordinal(), receivedEvent.operationType());
             Assertions.assertEquals(event.getAuthDetails().getUserId(), receivedEvent.authDetails().userId());
-            Assertions.assertEquals(handler.getHeader("AGW-ID"), AGW_ID);
+            Assertions.assertEquals(handler.getHeader("IDP-ID"), IDP_ID);
         });
     }
 
@@ -215,7 +215,7 @@ class HttpEventEmitterProviderTest {
                 LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
                 LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
                 HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                        idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, AGW_ID);
+                        idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
 
                 Assertions.assertEquals(0, pendingEvents.size());
 
@@ -241,7 +241,7 @@ class HttpEventEmitterProviderTest {
                 LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
                 LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
                 HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                        idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, AGW_ID);
+                        idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
 
                 Assertions.assertEquals(0, pendingEvents.size());
 
@@ -266,7 +266,7 @@ class HttpEventEmitterProviderTest {
             LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
             LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
             HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, AGW_ID);
+                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
 
             Assertions.assertEquals(0, pendingEvents.size());
 
@@ -306,7 +306,7 @@ class HttpEventEmitterProviderTest {
             LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
             LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
             HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, AGW_ID);
+                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
 
             AdminEvent event = createAdminEvent();
             HttpEventEmitterProvider.onEvent(event, true);

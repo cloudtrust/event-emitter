@@ -1,11 +1,10 @@
 package io.cloudtrust.keycloak.eventemitter.httpemitter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Strings;
+import io.cloudtrust.keycloak.eventemitter.CompleteEventUtils;
 import io.cloudtrust.keycloak.eventemitter.Container;
 import io.cloudtrust.keycloak.eventemitter.HasUid;
 import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
-import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAuthDetails;
 import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedAdminEvent;
 import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedEvent;
 import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
@@ -34,13 +33,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -51,11 +48,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static io.cloudtrust.keycloak.eventemitter.SerializationUtils.toFlat;
 import static io.cloudtrust.keycloak.eventemitter.SerializationUtils.toJson;
@@ -69,9 +63,7 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     public static final String KEYCLOAK_BRIDGE_SECRET_TOKEN = "CT_KEYCLOAK_BRIDGE_SECRET_TOKEN";
     public static final String HOSTNAME = "HOSTNAME";
 
-    private static final String BASIC = "Basic";
-    private static final String AUTHORIZATION = "Authorization";
-    private static final String AGW_ID = "AGW-ID";
+    private static final String IDP_ID = "IDP-ID";
     private static final String PKCS7_SIGNATURE = "PKCS7-Signature";
 
     private static final int HTTP_OK = 200;
@@ -87,10 +79,9 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     private final LinkedBlockingQueue<IdentifiedEvent> pendingEvents;
     private final LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents;
     private final String targetUri;
-    private final String username;
-    private final String secretToken;
     private final RequestConfig requestConfig;
-    private final String agwId;
+    private final String idpId;
+    private final CompleteEventUtils completeEventUtils;
 
     /**
      * Constructor.
@@ -106,7 +97,7 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     HttpEventEmitterProvider(KeycloakSession keycloakSession, CloseableHttpClient httpClient, IdGenerator idGenerator,
                              String targetUri, LinkedBlockingQueue<IdentifiedEvent> pendingEvents,
                              LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents, RequestConfig requestConfig,
-                             String agwId) {
+                             String idpId) {
         logger.debug("HttpEventEmitterProvider constructor call");
         this.keycloakSession = keycloakSession;
         this.httpClient = httpClient;
@@ -116,27 +107,13 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
         this.pendingEvents = pendingEvents;
         this.pendingAdminEvents = pendingAdminEvents;
         this.requestConfig = requestConfig;
-        this.agwId = agwId;
-
-        // Secret token
-        secretToken = checkEnv(KEYCLOAK_BRIDGE_SECRET_TOKEN);
-        // Hostname
-        username = checkEnv(HOSTNAME);
-    }
-
-    private String checkEnv(String key) {
-        String env = System.getenv(key);
-        if (env != null) {
-            return env;
-        }
-        String message = "Cannot find the environment variable '" + key + "'";
-        logger.error(message);
-        throw new IllegalStateException(message);
+        this.idpId = idpId;
+        this.completeEventUtils = new CompleteEventUtils(keycloakSession);
     }
 
     public void onEvent(Event event) {
         logger.debug("HttpEventEmitterProvider onEvent call for Event");
-        completeEventAttributes(event);
+        completeEventUtils.completeEventAttributes(event);
         logger.debugf("Pending Events to send stored in buffer: %d", pendingEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
@@ -163,7 +140,7 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
         logger.debugf("Pending AdminEvents to send stored in buffer: %d", pendingAdminEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
-        ExtendedAdminEvent customAdminEvent = completeAdminEventAttributes(identifiedAdminEvent);
+        ExtendedAdminEvent customAdminEvent = completeEventUtils.completeAdminEventAttributes(identifiedAdminEvent);
 
         while (!pendingAdminEvents.offer(customAdminEvent)) {
             AdminEvent skippedAdminEvent = pendingAdminEvents.poll();
@@ -183,6 +160,11 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
 
     public void close() {
         // Nothing to do
+    }
+
+    private void sendEvents() {
+        sendEvents(pendingEvents, e -> sendBytes(toFlat(e), Event.class.getSimpleName()));
+        sendEvents(pendingAdminEvents, e -> sendBytes(toFlat(e), AdminEvent.class.getSimpleName()));
     }
 
     private <T extends HasUid> void sendEvents(LinkedBlockingQueue<T> queue, EventSender<T> eventProcessor) {
@@ -206,11 +188,6 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
         }
     }
 
-    private void sendEvents() {
-        sendEvents(pendingEvents, e -> sendBytes(toFlat(e), Event.class.getSimpleName()));
-        sendEvents(pendingAdminEvents, e -> sendBytes(toFlat(e), AdminEvent.class.getSimpleName()));
-    }
-
     private void sendBytes(ByteBuffer buffer, String type) throws IOException, HttpEventEmitterException {
         byte[] b = new byte[buffer.remaining()];
         buffer.get(b);
@@ -229,17 +206,15 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
         httpPost.setEntity(stringEntity);
         httpPost.setHeader("Content-type", "application/json");
 
-        String token = username + ":" + secretToken;
-        String b64Token = Base64.getEncoder().encodeToString(token.getBytes());
         List<Header> headers = new ArrayList<>();
-        headers.add(new BasicHeader(AUTHORIZATION, BASIC + " " + b64Token));
-        headers.add(new BasicHeader(AGW_ID, agwId));
+        headers.add(new BasicHeader(IDP_ID, idpId));
 
         // Sign the payload
         try {
             String signature = computeSignature(json);
             headers.add(new BasicHeader(PKCS7_SIGNATURE, signature));
         } catch (Exception e) {
+            logger.error("Impossible to create PKCS7 signature on event");
             throw new HttpEventEmitterException(e.getMessage());
         }
 
@@ -256,53 +231,6 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
                 throw new HttpEventEmitterException("Target server failure.");
             }
         }
-    }
-
-    private void completeEventAttributes(Event event) {
-        // add username if missing
-        if (event.getDetails() == null) {
-            event.setDetails(new HashMap<>());
-        }
-        String eventUsername = event.getDetails().get(Details.USERNAME);
-        if (!Strings.isNullOrEmpty(event.getUserId()) && Strings.isNullOrEmpty(eventUsername)) {
-            RealmModel realm = keycloakSession.realms().getRealm(event.getRealmId());
-            // retrieve username from userId
-            UserModel user = keycloakSession.users().getUserById(realm, event.getUserId());
-            if (user != null) {
-                event.getDetails().put(Details.USERNAME, user.getUsername());
-            }
-        }
-    }
-
-    private ExtendedAdminEvent completeAdminEventAttributes(IdentifiedAdminEvent adminEvent) {
-        ExtendedAdminEvent extendedAdminEvent = new ExtendedAdminEvent(adminEvent);
-        // add always missing agent username
-        ExtendedAuthDetails extendedAuthDetails = extendedAdminEvent.getAuthDetails();
-        if (!Strings.isNullOrEmpty(extendedAuthDetails.getUserId())) {
-            RealmModel realm = keycloakSession.realms().getRealm(extendedAuthDetails.getRealmId());
-            UserModel user = keycloakSession.users().getUserById(realm, extendedAuthDetails.getUserId());
-            extendedAuthDetails.setUsername(user.getUsername());
-        }
-        // add username if resource is a user
-        String resourcePath = extendedAdminEvent.getResourcePath();
-        if (resourcePath != null && resourcePath.startsWith("users")) {
-            // parse userID
-            String pattern = "^users/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$";
-            Pattern r = Pattern.compile(pattern);
-            Matcher m = r.matcher(resourcePath);
-            if (m.matches()) {
-                String userId = m.group(1);
-                RealmModel realm = keycloakSession.realms().getRealm(adminEvent.getRealmId());
-                // retrieve user
-                UserModel user = keycloakSession.users().getUserById(realm, userId);
-                extendedAdminEvent.getDetails().put("user_id", userId);
-                if (user != null) {
-                    extendedAdminEvent.getDetails().put("username", user.getUsername());
-                }
-            }
-        }
-
-        return extendedAdminEvent;
     }
 
     /**

@@ -40,18 +40,16 @@ public class HttpEventEmitterProviderFactory implements EventListenerProviderFac
 
     private static final String TARGET_URI_CONFIG_KEY = "targetUri";
     private static final String BUFFER_CAPACITY_CONFIG_KEY = "bufferCapacity";
-    private static final String SNOWFLAKE_KEYCLOAKID_CONFIG_KEY = "keycloakId";
     private static final String SNOWFLAKE_DATACENTERID_CONFIG_KEY = "datacenterId";
-    private static final String AGW_ID_CONFIG_KEY = "agwId";
+    private static final String IDP_ID_CONFIG_KEY = "idpId";
     private static final String CONNECT_TIMEOUT_MILLIS = "connectTimeoutMillis";
     private static final String CONNECTION_REQUEST_TIMEOUT_MILLIS = "connectionRequestTimeoutMillis";
     private static final String SOCKET_TIMEOUT_MILLIS = "socketTimeoutMillis";
 
     private String targetUri;
     private Integer bufferCapacity;
-    private Integer keycloakId;
     private Integer datacenterId;
-    private String agwId;
+    private String idpId;
     private RequestConfig requestConfig;
 
     private CloseableHttpClient httpClient;
@@ -64,7 +62,7 @@ public class HttpEventEmitterProviderFactory implements EventListenerProviderFac
         logger.debug("HttpEventEmitterProviderFactory creation");
 
         return new HttpEventEmitterProvider(keycloakSession, httpClient, idGenerator, targetUri, pendingEventsToSend,
-                pendingAdminEventsToSend, requestConfig, agwId);
+                pendingAdminEventsToSend, requestConfig, idpId);
     }
 
     public void init(Config.Scope config) {
@@ -78,9 +76,8 @@ public class HttpEventEmitterProviderFactory implements EventListenerProviderFac
         }
 
         bufferCapacity = getIntConfig(config, BUFFER_CAPACITY_CONFIG_KEY, true);
-        keycloakId = getIntConfig(config, SNOWFLAKE_KEYCLOAKID_CONFIG_KEY, true);
         datacenterId = getIntConfig(config, SNOWFLAKE_DATACENTERID_CONFIG_KEY, true);
-        agwId = config.get(AGW_ID_CONFIG_KEY);
+        idpId = config.get(IDP_ID_CONFIG_KEY);
 
         // Creates request configuration
         Builder requestConfigBuilder = RequestConfig.custom();
@@ -89,7 +86,13 @@ public class HttpEventEmitterProviderFactory implements EventListenerProviderFac
         applyValueWhenDefined(config, SOCKET_TIMEOUT_MILLIS, requestConfigBuilder::setSocketTimeout);
         this.requestConfig = requestConfigBuilder.build();
 
-        // Initialisation
+        // Hash idpId and keep 5 last bits as keycloakId
+        int keycloakId = idpId.hashCode() % 32;
+        if (keycloakId < 0) {
+            // According to Java the result of a modulo operation can be negative :)
+            keycloakId += 32;
+        }
+
         httpClient = HttpClients.createDefault();
         idGenerator = new IdGenerator(keycloakId, datacenterId);
         pendingEventsToSend = new LinkedBlockingQueue<>(bufferCapacity);
@@ -140,7 +143,7 @@ public class HttpEventEmitterProviderFactory implements EventListenerProviderFac
         ret.put("Name", PROVIDER_NAME);
         ret.put("Target URI", targetUri);
         ret.put("Buffer capacity", Integer.toString(bufferCapacity));
-        ret.put("Snowflake Id Generator - Keycloak ID", Integer.toString(keycloakId));
+        ret.put("IDP ID", idpId);
         ret.put("Snowflake Id Generator - Datacenter ID", Integer.toString(datacenterId));
 
         return ret;
