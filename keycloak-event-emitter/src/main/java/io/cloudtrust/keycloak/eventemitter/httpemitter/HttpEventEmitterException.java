@@ -1,11 +1,14 @@
 package io.cloudtrust.keycloak.eventemitter.httpemitter;
 
+import io.cloudtrust.exception.CloudtrustException;
+
 import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * Exception for HttpEventEmitter Provider
  */
-class HttpEventEmitterException extends Exception {
+public class HttpEventEmitterException extends CloudtrustException implements Serializable {
     @Serial
     private static final long serialVersionUID = 7324694216864444008L;
 

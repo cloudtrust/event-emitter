@@ -35,7 +35,6 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
 
     private final KafkaEventEmitterState state;
     private final Lock stateLock;
-    private final CompleteEventUtils completeEventUtils;
 
     KafkaEventEmitterProvider(KeycloakSession keycloakSession, Producer<String, String> producer, String eventTopic,
                               String adminEventTopic, IdGenerator idGenerator,
@@ -48,12 +47,11 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
         this.pendingEvents = pendingEvents;
         this.state = state;
         this.stateLock = stateLock;
-        this.completeEventUtils = new CompleteEventUtils(keycloakSession);
     }
 
     @Override
     public void onEvent(Event event) {
-        completeEventUtils.completeEventAttributes(event);
+        CompleteEventUtils.completeEventAttributes(keycloakSession, event);
         long uid = idGenerator.nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
 
@@ -67,7 +65,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
     public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
-        ExtendedAdminEvent customAdminEvent = completeEventUtils.completeAdminEventAttributes(identifiedAdminEvent);
+        ExtendedAdminEvent customAdminEvent = CompleteEventUtils.completeAdminEventAttributes(keycloakSession, identifiedAdminEvent);
 
         // Flatbuffer serialization
         ByteBuffer buffer = SerializationUtils.toFlat(customAdminEvent);

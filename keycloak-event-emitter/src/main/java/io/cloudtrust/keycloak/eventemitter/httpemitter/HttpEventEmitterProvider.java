@@ -81,7 +81,6 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     private final String targetUri;
     private final RequestConfig requestConfig;
     private final String idpId;
-    private final CompleteEventUtils completeEventUtils;
 
     /**
      * Constructor.
@@ -108,12 +107,11 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
         this.pendingAdminEvents = pendingAdminEvents;
         this.requestConfig = requestConfig;
         this.idpId = idpId;
-        this.completeEventUtils = new CompleteEventUtils(keycloakSession);
     }
 
     public void onEvent(Event event) {
         logger.debug("HttpEventEmitterProvider onEvent call for Event");
-        completeEventUtils.completeEventAttributes(event);
+        CompleteEventUtils.completeEventAttributes(keycloakSession, event);
         logger.debugf("Pending Events to send stored in buffer: %d", pendingEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
@@ -140,7 +138,7 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
         logger.debugf("Pending AdminEvents to send stored in buffer: %d", pendingAdminEvents.size());
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
-        ExtendedAdminEvent customAdminEvent = completeEventUtils.completeAdminEventAttributes(identifiedAdminEvent);
+        ExtendedAdminEvent customAdminEvent = CompleteEventUtils.completeAdminEventAttributes(keycloakSession, identifiedAdminEvent);
 
         while (!pendingAdminEvents.offer(customAdminEvent)) {
             AdminEvent skippedAdminEvent = pendingAdminEvents.poll();

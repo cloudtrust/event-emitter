@@ -9,7 +9,7 @@ The aim of this module is to send those Events and AdminEvents to another server
 Java 21 is required.
 
 ### Build and Tests
-This project contains 2 modules, one with the event emitter code (could contain unit tests) and one for integration tests using a parent inherited from Keycloak tests for simplifying the
+This project contains 2 modules, one with the event emitter code (could contain unit tests) and one for integration tests using a parent inherited from KC Cloudtrust tests for simplifying the
 POM content.
 
 The integration tests rely on the arquillian-based Keycloak test framework. As Keycloak does not publish publicly
