@@ -46,7 +46,7 @@ class KafkaEventEmitterProviderTest {
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername("test-user");
         UserModel user = new UserAdapter(null, null, null, userEntity);
-        Mockito.when(keycloakSession.users().getUserById((RealmModel) Mockito.any(), Mockito.any())).thenReturn(user);
+        Mockito.when(keycloakSession.users().getUserById(Mockito.any(), Mockito.any())).thenReturn(user);
 
         // Realm
         RealmEntity realmEntity = new RealmEntity();
