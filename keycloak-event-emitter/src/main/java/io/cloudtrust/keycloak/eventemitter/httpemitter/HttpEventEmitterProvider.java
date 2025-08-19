@@ -66,8 +66,6 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     private static final String IDP_ID = "IDP-ID";
     private static final String PKCS7_SIGNATURE = "PKCS7-Signature";
 
-    private static final int HTTP_OK = 200;
-
     interface EventSender<T extends HasUid> {
         void send(T event) throws HttpEventEmitterException, IOException;
     }
@@ -224,11 +222,15 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
         try (CloseableHttpResponse response = httpClient.execute(httpPost, httpContext)) {
             int status = response.getStatusLine().getStatusCode();
 
-            if (status != HTTP_OK) {
+            if (!isSuccess(status)) {
                 logger.errorv("Sending failure (Server response:{0})", status);
                 throw new HttpEventEmitterException("Target server failure.");
             }
         }
+    }
+
+    private static boolean isSuccess(int httpStatus) {
+        return httpStatus>=200 && httpStatus<300;
     }
 
     /**
