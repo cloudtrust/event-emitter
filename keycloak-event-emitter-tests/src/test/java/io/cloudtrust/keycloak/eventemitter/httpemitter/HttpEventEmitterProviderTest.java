@@ -234,28 +234,29 @@ class HttpEventEmitterProviderTest {
 
     @Test
     void testServerError() {
-        final HttpErrorHandler handler = new HttpErrorHandler();
-        runWithHttpHandler(handler, () -> {
-            try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-                IdGenerator idGenerator = new IdGenerator(1, 1);
-                LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-                LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-                HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                        idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
+        runWithHttpHandler(
+                ex -> ex.setStatusCode(StatusCodes.MULTIPLE_CHOICES),
+                () -> {
+                    try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+                        IdGenerator idGenerator = new IdGenerator(1, 1);
+                        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+                        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+                        HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
+                                idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
 
-                Assertions.assertEquals(0, pendingEvents.size());
+                        Assertions.assertEquals(0, pendingEvents.size());
 
-                Event event = createEvent();
-                HttpEventEmitterProvider.onEvent(event);
+                        Event event = createEvent();
+                        HttpEventEmitterProvider.onEvent(event);
 
-                Assertions.assertEquals(1, pendingEvents.size());
+                        Assertions.assertEquals(1, pendingEvents.size());
 
-                Event event2 = createEvent();
-                HttpEventEmitterProvider.onEvent(event2);
+                        Event event2 = createEvent();
+                        HttpEventEmitterProvider.onEvent(event2);
 
-                Assertions.assertEquals(2, pendingEvents.size());
-            }
-        });
+                        Assertions.assertEquals(2, pendingEvents.size());
+                    }
+                });
     }
 
     @Test
@@ -361,13 +362,6 @@ class HttpEventEmitterProviderTest {
 
         int getCounter() {
             return counter;
-        }
-    }
-
-    static class HttpErrorHandler implements HttpHandler {
-        @Override
-        public void handleRequest(HttpServerExchange exchange) {
-            exchange.setResponseCode(StatusCodes.MULTIPLE_CHOICES);
         }
     }
 
