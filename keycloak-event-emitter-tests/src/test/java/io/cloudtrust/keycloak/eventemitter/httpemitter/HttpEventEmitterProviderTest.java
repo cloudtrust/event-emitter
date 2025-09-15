@@ -80,6 +80,7 @@ class HttpEventEmitterProviderTest {
     private static final String TARGET = "http://localhost:" + LISTEN_PORT + "/test";
     private static final int BUFFER_CAPACITY = 3;
     private static final String IDP_ID = "test-idp";
+    private static final String TID_REALM = "distant-realm";
 
     private static final String username = "toto";
     private static final String password = "passwordverylongandhardtoguess";
@@ -151,16 +152,28 @@ class HttpEventEmitterProviderTest {
         Mockito.when(keycloakSession.keys()).thenReturn(keyManager);
     }
 
+    private HttpEventEmitterContext createEmitterContext() {
+        IdGenerator idGenerator = new IdGenerator(1, 1);
+        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
+
+        HttpEventEmitterContext emitterContext = Mockito.mock(HttpEventEmitterContext.class);
+        Mockito.when(emitterContext.getTrustIDRealm()).thenReturn(TID_REALM);
+        Mockito.when(emitterContext.getTargetUri()).thenReturn(TARGET);
+        Mockito.when(emitterContext.getIdpId()).thenReturn(IDP_ID);
+        Mockito.when(emitterContext.getIdGenerator()).thenReturn(idGenerator);
+        Mockito.when(emitterContext.getPendingEvents()).thenReturn(pendingEvents);
+        Mockito.when(emitterContext.getPendingAdminEvents()).thenReturn(pendingAdminEvents);
+        return emitterContext;
+    }
+
     @Test
     void testFlatbufferFormatOutput() {
         final HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
         runWithHttpHandler(handler, () -> {
             CloseableHttpClient httpClient = HttpClients.createDefault();
-            IdGenerator idGenerator = new IdGenerator(1, 1);
-            LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-            LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-            HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
+            HttpEventEmitterContext emitterCfg = createEmitterContext();
+            HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient, emitterCfg);
 
             Event event = createEvent();
             HttpEventEmitterProvider.onEvent(event);
@@ -176,6 +189,7 @@ class HttpEventEmitterProviderTest {
             Assertions.assertEquals(event.getType().ordinal(), receivedEvent.type());
             Assertions.assertEquals(event.getClientId(), receivedEvent.clientId());
             Assertions.assertEquals(handler.getHeader("IDP-ID"), IDP_ID);
+            Assertions.assertEquals(handler.getHeader("TID-Realm"), TID_REALM);
         });
     }
 
@@ -184,11 +198,8 @@ class HttpEventEmitterProviderTest {
         final HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
         runWithHttpHandler(handler, () -> {
             CloseableHttpClient httpClient = HttpClients.createDefault();
-            IdGenerator idGenerator = new IdGenerator(1, 1);
-            LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-            LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-            HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
+            HttpEventEmitterContext emitterContext = createEmitterContext();
+            HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient, emitterContext);
 
             AdminEvent event = createAdminEvent();
             HttpEventEmitterProvider.onEvent(event, true);
@@ -204,6 +215,7 @@ class HttpEventEmitterProviderTest {
             Assertions.assertEquals(event.getOperationType().ordinal(), receivedEvent.operationType());
             Assertions.assertEquals(event.getAuthDetails().getUserId(), receivedEvent.authDetails().userId());
             Assertions.assertEquals(handler.getHeader("IDP-ID"), IDP_ID);
+            Assertions.assertEquals(handler.getHeader("TID-Realm"), TID_REALM);
         });
     }
 
@@ -211,23 +223,20 @@ class HttpEventEmitterProviderTest {
     void testNoConnection() throws Exception {
         runWithEnvironments(() -> {
             try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-                IdGenerator idGenerator = new IdGenerator(1, 1);
-                LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-                LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-                HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                        idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
+                HttpEventEmitterContext emitterContext = createEmitterContext();
+                HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient, emitterContext);
 
-                Assertions.assertEquals(0, pendingEvents.size());
+                Assertions.assertEquals(0, emitterContext.getPendingEvents().size());
 
                 Event event = createEvent();
                 HttpEventEmitterProvider.onEvent(event);
 
-                Assertions.assertEquals(1, pendingEvents.size());
+                Assertions.assertEquals(1, emitterContext.getPendingEvents().size());
 
                 Event event2 = createEvent();
                 HttpEventEmitterProvider.onEvent(event2);
 
-                Assertions.assertEquals(2, pendingEvents.size());
+                Assertions.assertEquals(2, emitterContext.getPendingEvents().size());
             }
         });
     }
@@ -238,23 +247,20 @@ class HttpEventEmitterProviderTest {
                 ex -> ex.setStatusCode(StatusCodes.MULTIPLE_CHOICES),
                 () -> {
                     try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-                        IdGenerator idGenerator = new IdGenerator(1, 1);
-                        LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-                        LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-                        HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                                idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
+                        HttpEventEmitterContext emitterContext = createEmitterContext();
+                        HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient, emitterContext);
 
-                        Assertions.assertEquals(0, pendingEvents.size());
+                        Assertions.assertEquals(0, emitterContext.getPendingEvents().size());
 
                         Event event = createEvent();
                         HttpEventEmitterProvider.onEvent(event);
 
-                        Assertions.assertEquals(1, pendingEvents.size());
+                        Assertions.assertEquals(1, emitterContext.getPendingEvents().size());
 
                         Event event2 = createEvent();
                         HttpEventEmitterProvider.onEvent(event2);
 
-                        Assertions.assertEquals(2, pendingEvents.size());
+                        Assertions.assertEquals(2, emitterContext.getPendingEvents().size());
                     }
                 });
     }
@@ -263,23 +269,20 @@ class HttpEventEmitterProviderTest {
     void testBufferAndSend() throws Exception {
         runWithEnvironments(() -> {
             CloseableHttpClient httpClient = HttpClients.createDefault();
-            IdGenerator idGenerator = new IdGenerator(1, 1);
-            LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-            LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-            HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
+            HttpEventEmitterContext emitterContext = createEmitterContext();
+            HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient, emitterContext);
 
-            Assertions.assertEquals(0, pendingEvents.size());
+            Assertions.assertEquals(0, emitterContext.getPendingEvents().size());
 
             Event event = createEvent();
             HttpEventEmitterProvider.onEvent(event);
 
-            Assertions.assertEquals(1, pendingEvents.size());
+            Assertions.assertEquals(1, emitterContext.getPendingEvents().size());
 
             Event event2 = createEvent();
             HttpEventEmitterProvider.onEvent(event2);
 
-            Assertions.assertEquals(2, pendingEvents.size());
+            Assertions.assertEquals(2, emitterContext.getPendingEvents().size());
 
             try {
                 HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
@@ -290,7 +293,7 @@ class HttpEventEmitterProviderTest {
 
                 httpClient.close();
 
-                Assertions.assertEquals(0, pendingEvents.size());
+                Assertions.assertEquals(0, emitterContext.getPendingEvents().size());
                 Assertions.assertEquals(3, handler.getCounter());
             } finally {
                 HttpServerManager.getDefault().stop(LISTEN_PORT);
@@ -303,11 +306,8 @@ class HttpEventEmitterProviderTest {
         final HttpJsonReceiverHandler handler = new HttpJsonReceiverHandler();
         runWithHttpHandler(handler, () -> {
             CloseableHttpClient httpClient = HttpClients.createDefault();
-            IdGenerator idGenerator = new IdGenerator(1, 1);
-            LinkedBlockingQueue<IdentifiedEvent> pendingEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-            LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents = new LinkedBlockingQueue<>(BUFFER_CAPACITY);
-            HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient,
-                    idGenerator, TARGET, pendingEvents, pendingAdminEvents, null, IDP_ID);
+            HttpEventEmitterContext emitterContext = createEmitterContext();
+            HttpEventEmitterProvider HttpEventEmitterProvider = new HttpEventEmitterProvider(keycloakSession, httpClient, emitterContext);
 
             AdminEvent event = createAdminEvent();
             HttpEventEmitterProvider.onEvent(event, true);
@@ -345,7 +345,7 @@ class HttpEventEmitterProviderTest {
 
         @Override
         public void handleRequest(HttpServerExchange exchange) throws Exception {
-            exchange.setResponseCode(StatusCodes.OK);
+            exchange.setStatusCode(StatusCodes.OK);
             ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
             headers = exchange.getRequestHeaders();
             jsonReceived = IOUtils.toString(cis, StandardCharsets.UTF_8);

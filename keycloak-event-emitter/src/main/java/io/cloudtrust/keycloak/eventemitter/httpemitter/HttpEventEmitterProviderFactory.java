@@ -2,9 +2,6 @@ package io.cloudtrust.keycloak.eventemitter.httpemitter;
 
 import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
 import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedEvent;
-import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.jboss.logging.Logger;
@@ -19,7 +16,6 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.IntConsumer;
 
 /**
  * Factory for HttpEventEmitterProvider.
@@ -38,87 +34,19 @@ public class HttpEventEmitterProviderFactory implements EventListenerProviderFac
     public static final String PROVIDER_ID = "http-event-emitter";
     private static final String PROVIDER_VERSION = "1.0";
 
-    private static final String TARGET_URI_CONFIG_KEY = "targetUri";
-    private static final String BUFFER_CAPACITY_CONFIG_KEY = "bufferCapacity";
-    private static final String SNOWFLAKE_DATACENTERID_CONFIG_KEY = "datacenterId";
-    private static final String IDP_ID_CONFIG_KEY = "idpId";
-    private static final String CONNECT_TIMEOUT_MILLIS = "connectTimeoutMillis";
-    private static final String CONNECTION_REQUEST_TIMEOUT_MILLIS = "connectionRequestTimeoutMillis";
-    private static final String SOCKET_TIMEOUT_MILLIS = "socketTimeoutMillis";
-
-    private String targetUri;
-    private Integer bufferCapacity;
-    private Integer datacenterId;
-    private String idpId;
-    private RequestConfig requestConfig;
-
+    private HttpEventEmitterContext emitterContext;
     private CloseableHttpClient httpClient;
-    private IdGenerator idGenerator;
-    private LinkedBlockingQueue<IdentifiedEvent> pendingEventsToSend;
-    private LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEventsToSend;
-
 
     public EventListenerProvider create(KeycloakSession keycloakSession) {
         logger.debug("HttpEventEmitterProviderFactory creation");
 
-        return new HttpEventEmitterProvider(keycloakSession, httpClient, idGenerator, targetUri, pendingEventsToSend,
-                pendingAdminEventsToSend, requestConfig, idpId);
+        return new HttpEventEmitterProvider(keycloakSession, httpClient, emitterContext);
     }
 
     public void init(Config.Scope config) {
         logger.info("HttpEventEmitter initialisation...");
-
-        targetUri = config.get(TARGET_URI_CONFIG_KEY);
-
-        if (targetUri == null) {
-            logger.error("Target URI configuration is missing.");
-            throw new IllegalArgumentException("Target URI configuration is missing.");
-        }
-
-        bufferCapacity = getIntConfig(config, BUFFER_CAPACITY_CONFIG_KEY, true);
-        datacenterId = getIntConfig(config, SNOWFLAKE_DATACENTERID_CONFIG_KEY, true);
-        idpId = config.get(IDP_ID_CONFIG_KEY);
-
-        // Creates request configuration
-        Builder requestConfigBuilder = RequestConfig.custom();
-        applyValueWhenDefined(config, CONNECT_TIMEOUT_MILLIS, requestConfigBuilder::setConnectTimeout);
-        applyValueWhenDefined(config, CONNECTION_REQUEST_TIMEOUT_MILLIS, requestConfigBuilder::setConnectionRequestTimeout);
-        applyValueWhenDefined(config, SOCKET_TIMEOUT_MILLIS, requestConfigBuilder::setSocketTimeout);
-        this.requestConfig = requestConfigBuilder.build();
-
-        // Hash idpId and keep 5 last bits as keycloakId
-        int keycloakId = idpId.hashCode() % 32;
-        if (keycloakId < 0) {
-            // According to Java the result of a modulo operation can be negative :)
-            keycloakId += 32;
-        }
-
+        this.emitterContext = new HttpEventEmitterContext(config);
         httpClient = HttpClients.createDefault();
-        idGenerator = new IdGenerator(keycloakId, datacenterId);
-        pendingEventsToSend = new LinkedBlockingQueue<>(bufferCapacity);
-        pendingAdminEventsToSend = new LinkedBlockingQueue<>(bufferCapacity);
-    }
-
-    private void applyValueWhenDefined(Config.Scope config, String name, IntConsumer consumer) {
-        Integer value = getIntConfig(config, name, false);
-        if (value != null) {
-            consumer.accept(value);
-        }
-    }
-
-    private Integer getIntConfig(Config.Scope config, String name, boolean mandatory) {
-        try {
-            Integer value = config.getInt(name);
-            if (value == null && mandatory) {
-                String message = name + " configuration is missing";
-                logger.errorf(message);
-                throw new IllegalArgumentException(message);
-            }
-            return value;
-        } catch (NumberFormatException e) {
-            logger.errorv(e, "Invalid %s configuration parameter", name);
-            throw e;
-        }
     }
 
     public void postInit(KeycloakSessionFactory keycloakSessionFactory) {
@@ -141,10 +69,10 @@ public class HttpEventEmitterProviderFactory implements EventListenerProviderFac
         Map<String, String> ret = new LinkedHashMap<>();
         ret.put("Version", PROVIDER_VERSION);
         ret.put("Name", PROVIDER_NAME);
-        ret.put("Target URI", targetUri);
-        ret.put("Buffer capacity", Integer.toString(bufferCapacity));
-        ret.put("IDP ID", idpId);
-        ret.put("Snowflake Id Generator - Datacenter ID", Integer.toString(datacenterId));
+        ret.put("Target URI", this.emitterContext.getTargetUri());
+        ret.put("Buffer capacity", Integer.toString(this.emitterContext.getBufferCapacity()));
+        ret.put("IDP ID", this.emitterContext.getIdpId());
+        ret.put("Snowflake Id Generator - Datacenter ID", Integer.toString(this.emitterContext.getDatacenterId()));
 
         return ret;
     }

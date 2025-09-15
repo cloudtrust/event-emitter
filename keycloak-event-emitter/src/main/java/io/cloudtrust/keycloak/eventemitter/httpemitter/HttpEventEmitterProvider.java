@@ -7,9 +7,7 @@ import io.cloudtrust.keycloak.eventemitter.HasUid;
 import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
 import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedAdminEvent;
 import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedEvent;
-import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
 import org.apache.http.Header;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -64,6 +62,7 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     public static final String HOSTNAME = "HOSTNAME";
 
     private static final String IDP_ID = "IDP-ID";
+    private static final String TID_REALM = "TID-Realm";
     private static final String PKCS7_SIGNATURE = "PKCS7-Signature";
 
     interface EventSender<T extends HasUid> {
@@ -73,49 +72,32 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     private final KeycloakSession keycloakSession;
     private final CloseableHttpClient httpClient;
     private final HttpClientContext httpContext;
-    private final IdGenerator idGenerator;
-    private final LinkedBlockingQueue<IdentifiedEvent> pendingEvents;
-    private final LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents;
-    private final String targetUri;
-    private final RequestConfig requestConfig;
-    private final String idpId;
+    private final HttpEventEmitterContext emitterContext;
 
     /**
      * Constructor.
      *
      * @param keycloakSession    session context
      * @param httpClient         to send serialized events to target server
-     * @param idGenerator        for unique event ID genration
-     * @param targetUri          where serialized events are sent
-     * @param pendingEvents      to send due to failure during previous trial
-     * @param pendingAdminEvents to send due to failure during previous trial
-     * @param requestConfig      configuration used for HTTP calls
+     * @param emitterContext     emitter context
      */
-    HttpEventEmitterProvider(KeycloakSession keycloakSession, CloseableHttpClient httpClient, IdGenerator idGenerator,
-                             String targetUri, LinkedBlockingQueue<IdentifiedEvent> pendingEvents,
-                             LinkedBlockingQueue<ExtendedAdminEvent> pendingAdminEvents, RequestConfig requestConfig,
-                             String idpId) {
+    HttpEventEmitterProvider(KeycloakSession keycloakSession, CloseableHttpClient httpClient, HttpEventEmitterContext emitterContext) {
         logger.debug("HttpEventEmitterProvider constructor call");
         this.keycloakSession = keycloakSession;
         this.httpClient = httpClient;
         this.httpContext = HttpClientContext.create();
-        this.idGenerator = idGenerator;
-        this.targetUri = targetUri;
-        this.pendingEvents = pendingEvents;
-        this.pendingAdminEvents = pendingAdminEvents;
-        this.requestConfig = requestConfig;
-        this.idpId = idpId;
+        this.emitterContext = emitterContext;
     }
 
     public void onEvent(Event event) {
         logger.debug("HttpEventEmitterProvider onEvent call for Event");
         CompleteEventUtils.completeEventAttributes(keycloakSession, event);
-        logger.debugf("Pending Events to send stored in buffer: %d", pendingEvents.size());
-        long uid = idGenerator.nextValidId();
+        logger.debugf("Pending Events to send stored in buffer: %d", this.emitterContext.getPendingEvents().size());
+        long uid = this.emitterContext.getIdGenerator().nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
 
-        while (!pendingEvents.offer(identifiedEvent)) {
-            Event skippedEvent = pendingEvents.poll();
+        while (!this.emitterContext.getPendingEvents().offer(identifiedEvent)) {
+            Event skippedEvent = this.emitterContext.getPendingEvents().poll();
             if (skippedEvent != null) {
                 String strEvent;
                 try {
@@ -133,13 +115,13 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
 
     public void onEvent(AdminEvent adminEvent, boolean b) {
         logger.debug("HttpEventEmitterProvider onEvent call for AdminEvent");
-        logger.debugf("Pending AdminEvents to send stored in buffer: %d", pendingAdminEvents.size());
-        long uid = idGenerator.nextValidId();
+        logger.debugf("Pending AdminEvents to send stored in buffer: %d", this.emitterContext.getPendingAdminEvents().size());
+        long uid = this.emitterContext.getIdGenerator().nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
         ExtendedAdminEvent customAdminEvent = CompleteEventUtils.completeAdminEventAttributes(keycloakSession, identifiedAdminEvent);
 
-        while (!pendingAdminEvents.offer(customAdminEvent)) {
-            AdminEvent skippedAdminEvent = pendingAdminEvents.poll();
+        while (!this.emitterContext.getPendingAdminEvents().offer(customAdminEvent)) {
+            AdminEvent skippedAdminEvent = this.emitterContext.getPendingAdminEvents().poll();
             if (skippedAdminEvent != null) {
                 String strAdminEvent;
                 try {
@@ -159,8 +141,8 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     }
 
     private void sendEvents() {
-        sendEvents(pendingEvents, e -> sendBytes(toFlat(e), Event.class.getSimpleName()));
-        sendEvents(pendingAdminEvents, e -> sendBytes(toFlat(e), AdminEvent.class.getSimpleName()));
+        sendEvents(this.emitterContext.getPendingEvents(), e -> sendBytes(toFlat(e), Event.class.getSimpleName()));
+        sendEvents(this.emitterContext.getPendingAdminEvents(), e -> sendBytes(toFlat(e), AdminEvent.class.getSimpleName()));
     }
 
     private <T extends HasUid> void sendEvents(LinkedBlockingQueue<T> queue, EventSender<T> eventProcessor) {
@@ -195,15 +177,16 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     }
 
     private void sendJson(String json) throws IOException, HttpEventEmitterException {
-        HttpPost httpPost = new HttpPost(targetUri);
-        httpPost.setConfig(requestConfig);
+        HttpPost httpPost = new HttpPost(this.emitterContext.getTargetUri());
+        httpPost.setConfig(this.emitterContext.getRequestConfig());
 
         StringEntity stringEntity = new StringEntity(json);
         httpPost.setEntity(stringEntity);
         httpPost.setHeader("Content-type", "application/json");
 
         List<Header> headers = new ArrayList<>();
-        headers.add(new BasicHeader(IDP_ID, idpId));
+        headers.add(new BasicHeader(IDP_ID, this.emitterContext.getIdpId()));
+        headers.add(new BasicHeader(TID_REALM, this.emitterContext.getTrustIDRealm()));
 
         // Sign the payload
         try {
