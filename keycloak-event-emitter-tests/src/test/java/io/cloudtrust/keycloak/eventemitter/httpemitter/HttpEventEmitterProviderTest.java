@@ -15,29 +15,11 @@ import io.undertow.util.StatusCodes;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.cert.CertIOException;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.cms.CMSProcessableByteArray;
-import org.bouncycastle.cms.CMSSignedData;
-import org.bouncycastle.cms.CMSTypedData;
-import org.bouncycastle.cms.SignerInformation;
-import org.bouncycastle.cms.SignerInformationStore;
-import org.bouncycastle.cms.SignerInformationVerifier;
-import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Event;
@@ -45,6 +27,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -59,18 +42,12 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.xnio.streams.ChannelInputStream;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.Security;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Base64;
-import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.mockito.Mockito.mock;
@@ -107,7 +84,7 @@ class HttpEventEmitterProviderTest {
     }
 
     @BeforeEach
-    public void initMock() throws NoSuchAlgorithmException, CertIOException, CertificateException, OperatorCreationException {
+    public void initMock() throws NoSuchAlgorithmException {
         MockitoAnnotations.openMocks(this);
         // user
         UserEntity userEntity = new UserEntity();
@@ -129,23 +106,7 @@ class HttpEventEmitterProviderTest {
         KeyWrapper keyWrapper = mock(KeyWrapper.class);
         Mockito.when(keyWrapper.getPrivateKey()).thenReturn(keyPair.getPrivate());
         Mockito.when(keyWrapper.getPublicKey()).thenReturn(keyPair.getPublic());
-
-        // Dummy self-signed certificate
-        Security.addProvider(new BouncyCastleProvider());
-
-        X500Name x500Name = new X500Name("CN=Test Realm");
-        BigInteger serial = BigInteger.valueOf(System.currentTimeMillis());
-        Date notBefore = new Date(System.currentTimeMillis());
-        Date notAfter = new Date(System.currentTimeMillis());
-
-        X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(x500Name, serial, notBefore, notAfter, x500Name, keyPair.getPublic());
-        certBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
-        certBuilder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign));
-
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSA").setProvider("BC").build(keyPair.getPrivate());
-        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certBuilder.build(signer));
-
-        Mockito.when(keyWrapper.getCertificate()).thenReturn(cert);
+        Mockito.when(keyWrapper.getAlgorithmOrDefault()).thenReturn(Algorithm.RS256);
 
         KeyManager keyManager = mock(KeyManager.class);
         Mockito.when(keyManager.getActiveKey(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(keyWrapper);
@@ -316,26 +277,25 @@ class HttpEventEmitterProviderTest {
 
             // Verify signature with realm public key
             KeyWrapper keyWrapper = keycloakSession.keys().getActiveKey(keycloakSession.getContext().getRealm(),
-                    KeyUse.SIG, Algorithm.RS256);
-            PublicKey publicKey = (PublicKey) keyWrapper.getPublicKey();
+                    KeyUse.SIG, Algorithm.EdDSA);
 
-            Security.addProvider(new BouncyCastleProvider());
-            byte[] signature = Base64.getDecoder().decode(handler.getHeader("PKCS7-Signature"));
-            CMSSignedData signedData;
-            byte[] payload = handler.getResponse().getBytes();
-            CMSTypedData payloadData = new CMSProcessableByteArray(payload);
-            signedData = new CMSSignedData(payloadData, signature);
-
-            SignerInformationStore signers = signedData.getSignerInfos();
-
-            for (SignerInformation signerInfo : signers.getSigners()) {
-                SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder()
-                        .setProvider("BC")
-                        .build(publicKey);
-
-                Assertions.assertTrue(signerInfo.verify(verifier));
+            String detachedSignature = handler.getHeader("JWS-Signature");
+            String fullJws = injectPayload(detachedSignature, handler.getResponse());
+            try {
+                JWSInput input = new JWSInput(fullJws);
+                byte[] data = input.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
+                Assertions.assertTrue(new AsymmetricSignatureVerifierContext(keyWrapper).verify(data, input.getSignature()));
+            } catch (Exception e) {
+                e.printStackTrace();
+                Assertions.fail();
             }
         });
+    }
+
+    private String injectPayload(String detachedSignature, String payload) {
+        String responseB64 = Base64.getEncoder().encodeToString(payload.getBytes(StandardCharsets.UTF_8)).replace("=", "");
+        int firstDot = detachedSignature.indexOf("..") + 1;
+        return detachedSignature.substring(0, firstDot) + responseB64 + detachedSignature.substring(firstDot);
     }
 
     static class HttpJsonReceiverHandler implements HttpHandler {
