@@ -9,14 +9,14 @@
     </parent>
 
     <artifactId>keycloak-event-emitter-parent</artifactId>
-    <version>26.1.3</version>
+    <version>26.1.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <scm>
         <connection>scm:git:ssh://git@github.com/cloudtrust/event-emitter</connection>
         <developerConnection>scm:git:ssh://git@github.com/cloudtrust/event-emitter</developerConnection>
         <url>https://github.com/cloudtrust/event-emitter</url>
-        <tag>26.1.3</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <modules>
