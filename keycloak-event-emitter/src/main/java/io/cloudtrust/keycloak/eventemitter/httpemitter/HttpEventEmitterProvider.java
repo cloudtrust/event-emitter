@@ -14,38 +14,24 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaCertStore;
-import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.CMSProcessableByteArray;
-import org.bouncycastle.cms.CMSSignedData;
-import org.bouncycastle.cms.CMSSignedDataGenerator;
-import org.bouncycastle.cms.CMSTypedData;
-import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.Security;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -63,7 +49,7 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
 
     private static final String IDP_ID = "IDP-ID";
     private static final String TID_REALM = "TID-Realm";
-    private static final String PKCS7_SIGNATURE = "PKCS7-Signature";
+    private static final String JWS_SIGNATURE = "JWS-Signature";
 
     interface EventSender<T extends HasUid> {
         void send(T event) throws HttpEventEmitterException, IOException;
@@ -77,9 +63,9 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     /**
      * Constructor.
      *
-     * @param keycloakSession    session context
-     * @param httpClient         to send serialized events to target server
-     * @param emitterContext     emitter context
+     * @param keycloakSession session context
+     * @param httpClient      to send serialized events to target server
+     * @param emitterContext  emitter context
      */
     HttpEventEmitterProvider(KeycloakSession keycloakSession, CloseableHttpClient httpClient, HttpEventEmitterContext emitterContext) {
         logger.debug("HttpEventEmitterProvider constructor call");
@@ -171,12 +157,9 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
         buffer.get(b);
 
         String obj = Base64.getEncoder().encodeToString(b);
-        Container c = new Container(type, obj);
-        String json = toJson(c);
-        sendJson(json);
-    }
+        Container container = new Container(type, obj);
+        String json = toJson(container);
 
-    private void sendJson(String json) throws IOException, HttpEventEmitterException {
         HttpPost httpPost = new HttpPost(this.emitterContext.getTargetUri());
         httpPost.setConfig(this.emitterContext.getRequestConfig());
 
@@ -190,10 +173,10 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
 
         // Sign the payload
         try {
-            String signature = computeSignature(json);
-            headers.add(new BasicHeader(PKCS7_SIGNATURE, signature));
+            String signature = computeSignature(container);
+            headers.add(new BasicHeader(JWS_SIGNATURE, signature));
         } catch (Exception e) {
-            logger.error("Impossible to create PKCS7 signature on event");
+            logger.error("Impossible to create signature on event", e);
             throw new HttpEventEmitterException(e.getMessage());
         }
 
@@ -213,38 +196,38 @@ public class HttpEventEmitterProvider implements EventListenerProvider {
     }
 
     private static boolean isSuccess(int httpStatus) {
-        return httpStatus>=200 && httpStatus<300;
+        return httpStatus >= 200 && httpStatus < 300;
     }
 
     /**
-     * Produces a PKCS7 signature on data using the signature key of the current realm.
+     * Produces a JWS signature on data using the signature key of the current realm.
      *
      * @param data the string to sign
      */
-    private String computeSignature(String data) throws CertificateEncodingException, IOException, OperatorCreationException, CMSException {
-        Security.addProvider(new BouncyCastleProvider());
-
+    private String computeSignature(Object data) throws HttpEventEmitterException {
         RealmModel realm = keycloakSession.getContext().getRealm();
-        KeyWrapper keyWrapper = keycloakSession.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
-        PrivateKey privateKey = (PrivateKey) keyWrapper.getPrivateKey();
-        X509Certificate cert = keyWrapper.getCertificate();
-        Provider provider = Security.getProvider("BC");
+        KeyWrapper keyWrapper = keycloakSession.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.EdDSA);
 
-        CMSTypedData msg = new CMSProcessableByteArray(data.getBytes());
-        CMSSignedDataGenerator signedDataGen = new CMSSignedDataGenerator();
-        X509CertificateHolder signCert = new X509CertificateHolder(cert.getEncoded());
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(provider).build(privateKey);
-        signedDataGen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
-                new JcaDigestCalculatorProviderBuilder().setProvider(provider).build()).build(signer, signCert));
+        String signature = new JWSBuilder()
+                .type("JOSE")
+                .x5c(getCertificates(keyWrapper))
+                .jsonContent(data)
+                .sign(new AsymmetricSignatureSignerContext(keyWrapper));
+        // Detach the payload part
+        int firstDot = signature.indexOf('.') + 1;
+        int secondDot = signature.indexOf('.', firstDot);
+        if (secondDot < firstDot) {
+            throw new IllegalArgumentException("Failed to compute JOSE signature");
+        }
+        return signature.substring(0, firstDot) + signature.substring(secondDot);
+    }
 
-        JcaCertStore certs = new JcaCertStore(List.of(cert));
-        signedDataGen.addCertificates(certs);
-
-        CMSSignedData signedData = signedDataGen.generate(msg, false);
-        byte[] signatureBytes = signedData.getEncoded();
-
-        return Base64.getEncoder().encodeToString(signatureBytes);
+    private static List<X509Certificate> getCertificates(KeyWrapper keyWrapper) throws HttpEventEmitterException {
+        if (keyWrapper.getCertificateChain() != null) {
+            return keyWrapper.getCertificateChain();
+        } else if (keyWrapper.getCertificate() != null) {
+            return Collections.singletonList(keyWrapper.getCertificate());
+        }
+        throw new HttpEventEmitterException("No available certificate in key " + keyWrapper.getType() + "/" + keyWrapper.getKid());
     }
 }
-
-

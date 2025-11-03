@@ -1,7 +1,5 @@
 package io.cloudtrust.keycloak.eventemitter.httpemitter;
 
-import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
-import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedEvent;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.jboss.logging.Logger;
@@ -15,7 +13,6 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Factory for HttpEventEmitterProvider.
