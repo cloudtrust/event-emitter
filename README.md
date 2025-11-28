@@ -33,15 +33,6 @@ tar -zxf keycloak-event-emitter-<version>-dist.tar.gz --directory <PATH_TO_KEYCL
 chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/event-emitter
 ```
 
-Configuration parameters of HTTP Event Emitter:
-* targetUri: server endpoint where to send the serialized events
-* bufferCapacity: window size of events kept in memory if failure occurs
-* datacenterId: configuration parameter for snowflake unique ID generation, id of the datacenter
-* idpId: name of the IDP, present in headers and used for unique ID generation
-* connectTimeoutMillis: timeout in milliseconds until a connection is established. Parameter is optional
-* connectionRequestTimeoutMillis: timeout in milliseconds used when requesting a connection from the connection manager. Parameter is optional
-* socketTimeoutMillis: socket timeout (SO_TIMEOUT) in milliseconds. Parameter is optional
-
 Configuration parameters of Kafka Event Emitter:
 * bufferCapacity: window size of events kept in memory if failure occurs
 * clientId Kafka client ID
