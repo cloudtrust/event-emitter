@@ -63,7 +63,7 @@ This module will authenticate itself to the server endpoint with Basic authentic
 ### Flatbuffers
 
 Go to event-emitter module directory.
-Flatbuffers schema is located under src/main/flatbuffers/flatbuffers/event.fbs.
+Flatbuffers schema is located under src/main/flatbuffers/event.fbs.
 
 Compilation of the schema
 ```Bash
