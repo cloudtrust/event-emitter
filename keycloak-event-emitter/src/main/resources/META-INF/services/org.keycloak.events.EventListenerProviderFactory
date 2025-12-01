@@ -1,2 +1,1 @@
 io.cloudtrust.keycloak.eventemitter.kafkaemitter.KafkaEventEmitterProviderFactory
-io.cloudtrust.keycloak.eventemitter.httpemitter.HttpEventEmitterProviderFactory
