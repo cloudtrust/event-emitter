@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>keycloak-event-emitter-tests</artifactId>
-    <version>26.1.5</version>
+    <version>26.1.6-SNAPSHOT</version>
 
     <properties>
         <apache-cxf.version>3.4.1</apache-cxf.version>
