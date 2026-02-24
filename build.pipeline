@@ -1,1 +1,1 @@
-javaBuildPipeline('kc-event-emitter', [[name: 'keycloak-event-emitter', path:'./keycloak-event-emitter']], true)
+javaBuildPipeline('kc-event-emitter', [[name: 'keycloak-event-emitter', path:'./keycloak-event-emitter']], isGithub: true)
