@@ -6,6 +6,7 @@ import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedAdminEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -27,6 +28,26 @@ public class CompleteEventUtils {
         String eventUsername = event.getDetails().get(Details.USERNAME);
         if (StringUtils.isNotBlank(event.getUserId()) && StringUtils.isBlank(eventUsername)) {
             findUser(keycloakSession, event.getUserId(), event.getRealmId(), u -> event.getDetails().put(Details.USERNAME, u.getUsername()));
+        }
+        if (event.getType() == EventType.FEDERATED_IDENTITY_LINK){
+            completeTeamMemberLink(keycloakSession, event);
+        }
+    }
+
+    // for team member federated identity link, we want the EVENT to be emitted on the parent user
+    private static void completeTeamMemberLink(KeycloakSession keycloakSession, Event event) {
+        String username = event.getDetails().get(Details.USERNAME);
+        String pattern = "^extidp_teammember-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+        if (Pattern.matches(pattern, username)) {
+            findUser(keycloakSession, event.getUserId(), event.getRealmId(), extidpTeamMember -> {
+                String parentID = extidpTeamMember.getFirstAttribute("parentID");
+                if (parentID != null) {
+                    findUser(keycloakSession, parentID, event.getRealmId(), parent -> {
+                        event.setUserId(parent.getId());
+                        event.getDetails().put(Details.USERNAME, parent.getUsername());
+                    });
+                }
+            });
         }
     }
 

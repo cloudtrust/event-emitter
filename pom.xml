@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>keycloak-event-emitter-parent</artifactId>
-    <version>26.2.1-SNAPSHOT</version>
+    <version>26.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <scm>
