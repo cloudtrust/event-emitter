@@ -110,7 +110,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
             while (!pendingEvents.offer(record)) {
                 ProducerRecord<String, String> skippedRecord = pendingEvents.poll();
                 if (skippedRecord != null) {
-                    logger.errorf("Event dropped due to full queue, event : %s", skippedRecord);
+                    logger.errorf("Event dropped due to full queue and producer is null, event: %s, current state: %s", skippedRecord, state);
                 }
             }
             state.pending();
@@ -120,7 +120,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
             while (!pendingEvents.offer(record)) {
                 ProducerRecord<String, String> skippedRecord = pendingEvents.poll();
                 if (skippedRecord != null) {
-                    logger.errorf("Event dropped due to full queue, event : %s", skippedRecord);
+                    logger.errorf("Event dropped due to full queue, event: %s, current state: %s", skippedRecord, state);
                 }
             }
 
