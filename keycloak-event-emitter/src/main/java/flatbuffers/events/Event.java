@@ -29,7 +29,7 @@ public final class Event extends Table {
 
   public long uid() { int o = __offset(4); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
   public long time() { int o = __offset(6); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public byte type() { int o = __offset(8); return o != 0 ? bb.get(o + bb_pos) : 0; }
+  public int type() { int o = __offset(8); return o != 0 ? bb.get(o + bb_pos) & 0xFF : 0; }
   public String realmId() { int o = __offset(10); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer realmIdAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
   public ByteBuffer realmIdInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 10, 1); }
@@ -57,7 +57,7 @@ public final class Event extends Table {
   public static int createEvent(FlatBufferBuilder builder,
       long uid,
       long time,
-      byte type,
+      int type,
       int realmIdOffset,
       int clientIdOffset,
       int userIdOffset,
@@ -82,7 +82,7 @@ public final class Event extends Table {
   public static void startEvent(FlatBufferBuilder builder) { builder.startTable(10); }
   public static void addUid(FlatBufferBuilder builder, long uid) { builder.addLong(0, uid, 0L); }
   public static void addTime(FlatBufferBuilder builder, long time) { builder.addLong(1, time, 0L); }
-  public static void addType(FlatBufferBuilder builder, byte type) { builder.addByte(2, type, 0); }
+  public static void addType(FlatBufferBuilder builder, int type) { builder.addByte(2, (byte) type, (byte) 0); }
   public static void addRealmId(FlatBufferBuilder builder, int realmIdOffset) { builder.addOffset(3, realmIdOffset, 0); }
   public static void addClientId(FlatBufferBuilder builder, int clientIdOffset) { builder.addOffset(4, clientIdOffset, 0); }
   public static void addUserId(FlatBufferBuilder builder, int userIdOffset) { builder.addOffset(5, userIdOffset, 0); }
