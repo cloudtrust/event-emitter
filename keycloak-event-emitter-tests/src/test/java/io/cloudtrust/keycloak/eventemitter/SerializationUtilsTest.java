@@ -9,6 +9,8 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
@@ -20,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 class SerializationUtilsTest {
     private long UID = 123456789L;
@@ -46,13 +49,13 @@ class SerializationUtilsTest {
     @Test
     void testAdminEventToJson() throws JsonProcessingException {
         String jsonEvent = SerializationUtils.toJson(createExtendedAdminEvent());
-        Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":\"realmId\",\"realmName\":null,\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\",\"uid\":123456789,\"extAuthDetails\":{\"realmId\":\"authDetails-realmId\",\"realmName\":null,\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\",\"username\":\"authDetails-username\"},\"details\":{\"user_id\":\"userid\",\"username\":\"username\"}}", jsonEvent);
+        Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":\"realmId\",\"realmName\":null,\"resourceType\":\"AUTHORIZATION_RESOURCE\",\"operationType\":\"CREATE\",\"resourcePath\":\"resource/path\",\"representation\":\"representation\",\"error\":\"error\",\"uid\":123456789,\"resourceId\":\"path\",\"extAuthDetails\":{\"realmId\":\"authDetails-realmId\",\"realmName\":null,\"clientId\":\"authDetails-clientId\",\"userId\":\"authDetails-userId\",\"ipAddress\":\"authDetails-ipAddress\",\"username\":\"authDetails-username\"},\"details\":{\"user_id\":\"userid\",\"username\":\"username\"}}", jsonEvent);
     }
 
     @Test
     void testMinimalAdminEventToJson() throws JsonProcessingException {
         String jsonEvent = SerializationUtils.toJson(createMinimalExtendedAdminEvent());
-        Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":null,\"realmName\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null,\"uid\":123456789,\"extAuthDetails\":null,\"details\":{}}", jsonEvent);
+        Assertions.assertEquals("{\"id\":null,\"time\":120000,\"realmId\":null,\"realmName\":null,\"resourceType\":null,\"operationType\":null,\"resourcePath\":null,\"representation\":null,\"error\":null,\"uid\":123456789,\"resourceId\":null,\"extAuthDetails\":null,\"details\":{}}", jsonEvent);
     }
 
     @Test
@@ -62,6 +65,27 @@ class SerializationUtilsTest {
         flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
         Assertions.assertTrue(equals(event, deserializedEvent));
         Assertions.assertEquals(UID, deserializedEvent.uid());
+    }
+
+    @ParameterizedTest
+    @MethodSource("eventTypes")
+    void testEventToFlatbuffersIntSerialization(EventType eventType) {
+        Event event = new Event();
+        event.setType(eventType);
+        ByteBuffer buffer = SerializationUtils.toFlat(new IdentifiedEvent(UID, event));
+        flatbuffers.events.Event deserializedEvent = flatbuffers.events.Event.getRootAsEvent(buffer);
+        Assertions.assertTrue(equals(event, deserializedEvent));
+        Assertions.assertEquals(UID, deserializedEvent.uid());
+    }
+
+    private static Stream<EventType> eventTypes() {
+        return Stream.of(
+                EventType.CLIENT_LOGIN,
+                EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST,
+                EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR,
+                EventType.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT,
+                EventType.JWT_AUTHORIZATION_GRANT
+        );
     }
 
     @Test
@@ -198,4 +222,5 @@ class SerializationUtilsTest {
                 .append(adminEventDetails.getRealmId(), adminEventFlatDetails.realmId())
                 .build();
     }
+
 }
