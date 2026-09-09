@@ -33,12 +33,12 @@ public class SerializationUtils {
         long time = event.getTime();
 
         // Type
-        byte type;
+        int type;
         // size of the list minus 1 because we add UNKNOWN event type in flatbuffers list
         int eventTypeSize = flatbuffers.events.EventType.names.length - 1;
 
         if (event.getType().ordinal() < eventTypeSize) {
-            type = (byte) event.getType().ordinal();
+            type = event.getType().ordinal();
         } else {
             // EventType returned by the Event is unknown by flatbuffers
             type = flatbuffers.events.EventType.UNKNOWN;
