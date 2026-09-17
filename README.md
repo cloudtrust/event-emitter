@@ -9,11 +9,10 @@ The aim of this module is to send those Events and AdminEvents to another server
 Java 21 is required.
 
 ### Build and Tests
-This project contains 2 modules, one with the event emitter code (could contain unit tests) and one for integration tests using a parent inherited from KC Cloudtrust tests for simplifying the
+This project contains 2 modules, one with the event emitter code (could contain unit tests) and one for integration tests using a parent inherited from KC test framework for simplifying the
 POM content.
 
-The integration tests rely on the arquillian-based Keycloak test framework. As Keycloak does not publish publicly
-the related jars for testing, one needs to manually build them so that they are available for maven for testing.
+The integration tests rely on the Keycloak test framework.
 
 ### Binary
 The build produces the JAR of the module, along with a TAR.GZ file that contains the dependencies to be installed
@@ -22,16 +21,7 @@ with the module.
 ## Installation
 Event emitter module is expected to be installed as a module in a specific layer.
 
-To install the release, go to event-emitter module directory and use the TAR.GZ file produced by the build; either run the `install.sh` script
-or manually proceed as follows:
-
-```Bash
-# Install the module binaries
-tar -zxf keycloak-event-emitter-<version>-dist.tar.gz --directory <PATH_TO_KEYCLOAK>/modules/system/layers
-
-# Set the appropriate permissions on the new files
-chmod -R 755 <PATH_TO_KEYCLOAK>/modules/system/layers/event-emitter
-```
+To install the release, go to event-emitter module directory and use the TAR.GZ file produced by the build, run the `install.sh` script
 
 Configuration parameters of Kafka Event Emitter:
 * bufferCapacity: window size of events kept in memory if failure occurs
@@ -40,7 +30,7 @@ Configuration parameters of Kafka Event Emitter:
 * eventTopic: name of the topic where events will be sent
 * adminEventTopic: name of the topic where admin events will be sent
 * securityProtocol: security protocol to use inside kafka
-* saslOauthbearerTokenEndpointUrl the URL of the token endpoint
+* saslOauthBearerTokenEndpointUrl the URL of the token endpoint
 * saslMechanism the SASL mode used by Kafka
 * keycloakId: configuration parameter for snowflake unique ID generation, id of the keycloak instance
 * datacenterId: configuration parameter for snowflake unique ID generation, id of the datacenter
@@ -63,7 +53,7 @@ This module will authenticate itself to the server endpoint with Basic authentic
 ### Flatbuffers
 
 Go to event-emitter module directory.
-Flatbuffers schema is located under src/main/flatbuffers/event.fbs.
+Flatbuffers schema is located under src/main/flatbuffers/events.fbs.
 
 Compilation of the schema
 ```Bash
@@ -72,7 +62,7 @@ $FLATC_HOME/flatc --java events.fbs
 Generated classes must be located in src/main/java/flatbuffers/events
 
 *Quick note for flatc installation*
-```Bashde 
+```Bash
 $ git clone https://github.com/google/flatbuffers.git
 $ cd flatbuffers
 $ cmake -G "Unix Makefiles"
@@ -113,7 +103,7 @@ Each time a new Keycloak version is issued, the project must be updated:
   * add the appropriate `module-*.xml` files in the `src/assembly` folder
   * adapt the properties in the `filter.properties`
 * check whether the code still compiles (run `mvn compile`)
-* ensure that the enum values in `event.fbs` are complete by comparing with the Keycloak source code
+* ensure that the enum values in `events.fbs` are complete by comparing with the Keycloak source code
 * generate the flatbuffers stubs as described above (use a flatbuffers binary that matched the flatbuffers libraries in the POM)
 * run the tests and generate the JAR module and the TAR.GZ distribution package: `mvn package`
   * ensure that the distribution package contains everything that is needed for the module to properly run

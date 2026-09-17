@@ -70,12 +70,12 @@ class KafkaEventEmitterProviderTest {
         kafkaEventEmitterProvider.onEvent(event);
         List<ProducerRecord<String, String>> recordList = mockProducer.history();
 
-        ProducerRecord<String, String> producedEvent = recordList.get(0);
+        ProducerRecord<String, String> producedEvent = recordList.getFirst();
 
         byte[] b = Base64.getDecoder().decode(producedEvent.value());
         flatbuffers.events.Event receivedEvent = flatbuffers.events.Event.getRootAsEvent(ByteBuffer.wrap(b));
         Assertions.assertEquals(event.getTime(), receivedEvent.time());
-        Assertions.assertEquals(event.getType().ordinal(), receivedEvent.type());
+        Assertions.assertEquals(event.getType().name(), flatbuffers.events.EventType.names[receivedEvent.type()]);
         Assertions.assertEquals(event.getClientId(), receivedEvent.clientId());
     }
 
@@ -92,13 +92,13 @@ class KafkaEventEmitterProviderTest {
         kafkaEventEmitterProvider.onEvent(event, false);
         List<ProducerRecord<String, String>> recordList = mockProducer.history();
 
-        ProducerRecord<String, String> producedEvent = recordList.get(0);
+        ProducerRecord<String, String> producedEvent = recordList.getFirst();
 
         byte[] b = Base64.getDecoder().decode(producedEvent.value());
 
         flatbuffers.events.AdminEvent receivedEvent = flatbuffers.events.AdminEvent.getRootAsAdminEvent(ByteBuffer.wrap(b));
         Assertions.assertEquals(event.getTime(), receivedEvent.time());
-        Assertions.assertEquals(event.getOperationType().ordinal(), receivedEvent.operationType());
+        Assertions.assertEquals(event.getOperationType().name(), flatbuffers.events.OperationType.names[receivedEvent.operationType()]);
         Assertions.assertEquals(event.getAuthDetails().getUserId(), receivedEvent.authDetails().userId());
     }
 
