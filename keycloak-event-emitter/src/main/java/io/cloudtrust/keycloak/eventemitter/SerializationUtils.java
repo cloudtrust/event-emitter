@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.flatbuffers.FlatBufferBuilder;
 import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
 import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedEvent;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -15,6 +18,12 @@ import java.util.Map;
  */
 public class SerializationUtils {
     private static final int FLATBUFFER_INIT_SIZE = 1024;
+    private static final FlatBufferMapper<EventType> eventTypeMapper =
+            new FlatBufferMapper<>(EventType.class, flatbuffers.events.EventType.names);
+    private static final FlatBufferMapper<ResourceType> resourceTypeMapper =
+            new FlatBufferMapper<>(ResourceType.class, flatbuffers.events.ResourceType.names);
+    private static final FlatBufferMapper<OperationType> operationTypeMapper =
+            new FlatBufferMapper<>(OperationType.class, flatbuffers.events.OperationType.names, false);
 
     private SerializationUtils() {
     }
@@ -33,16 +42,7 @@ public class SerializationUtils {
         long time = event.getTime();
 
         // Type
-        int type;
-        // size of the list minus 1 because we add UNKNOWN event type in flatbuffers list
-        int eventTypeSize = flatbuffers.events.EventType.names.length - 1;
-
-        if (event.getType().ordinal() < eventTypeSize) {
-            type = event.getType().ordinal();
-        } else {
-            // EventType returned by the Event is unknown by flatbuffers
-            type = flatbuffers.events.EventType.UNKNOWN;
-        }
+        int type = eventTypeMapper.get(event.getType());
 
         int realmId = createString(builder, event.getRealmId());
         int clientId = createString(builder, event.getClientId());
@@ -82,10 +82,7 @@ public class SerializationUtils {
         long timeOffset = adminEvent.getTime();
 
         // RealmId
-        int realmIdOffset = 0;
-        if (adminEvent.getRealmId() != null) {
-            realmIdOffset = builder.createString(adminEvent.getRealmId());
-        }
+        int realmIdOffset = createString(builder, adminEvent.getRealmId());
 
         // AuthDetails
         int authDetailsOffset = 0;
@@ -103,45 +100,22 @@ public class SerializationUtils {
         }
 
         // ResourceType
-        byte resourceTypeOffset = 0;
-        // size of the list minus 1 because we add UNKNOWN resource type in flatbuffers list
-        int resourceTypeSize = flatbuffers.events.ResourceType.names.length - 1;
-
-        if (adminEvent.getResourceType() != null) {
-            if (adminEvent.getResourceType().ordinal() < resourceTypeSize) {
-                resourceTypeOffset = (byte) adminEvent.getResourceType().ordinal();
-            } else {
-                // ResourceType returned by the AdminEvent is unknown by flatbuffers
-                resourceTypeOffset = flatbuffers.events.ResourceType.UNKNOWN;
-            }
-        }
+        byte resourceTypeOffset = (byte)resourceTypeMapper.get(adminEvent.getResourceType());
 
         // OperationType
-        byte operationTypeOffset = 0;
-        if (adminEvent.getOperationType() != null) {
-            operationTypeOffset = (byte) adminEvent.getOperationType().ordinal();
-        }
+        byte operationTypeOffset = (byte)operationTypeMapper.get(adminEvent.getOperationType());
 
         // ResourcePath
-        int resourcePathOffset = 0;
-        if (adminEvent.getResourcePath() != null) {
-            resourcePathOffset = builder.createString(adminEvent.getResourcePath());
-        }
+        int resourcePathOffset = createString(builder, adminEvent.getResourcePath());
 
         // Representation
-        int representationOffset = 0;
-        if (adminEvent.getRepresentation() != null) {
-            representationOffset = builder.createString(adminEvent.getRepresentation());
-        }
+        int representationOffset = createString(builder, adminEvent.getRepresentation());
 
         // Details
         int detailsVec = createMap(builder, adminEvent.getDetails());
 
         // Error
-        int errorOffset = 0;
-        if (adminEvent.getError() != null) {
-            errorOffset = builder.createString(adminEvent.getError());
-        }
+        int errorOffset = createString(builder, adminEvent.getError());
 
         flatbuffers.events.AdminEvent.startAdminEvent(builder);
 

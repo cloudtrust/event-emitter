@@ -3,6 +3,7 @@
 namespace flatbuffers.events;
 
 enum EventType:ubyte {
+    UNKNOWN, // Default case
     LOGIN,
     LOGIN_ERROR,
     REGISTER,
@@ -134,11 +135,11 @@ enum EventType:ubyte {
     VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT,
     VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT_ERROR,
     JWT_AUTHORIZATION_GRANT,
-    JWT_AUTHORIZATION_GRANT_ERROR,
-    UNKNOWN // Default case
+    JWT_AUTHORIZATION_GRANT_ERROR
 }
 
 enum ResourceType:byte {
+    UNKNOWN, // Default case
     REALM,
     REALM_ROLE,
     REALM_ROLE_MAPPING,
@@ -177,8 +178,7 @@ enum ResourceType:byte {
     ORGANIZATION,
     ORGANIZATION_MEMBERSHIP,
     ORGANIZATION_GROUP,
-    ORGANIZATION_GROUP_MEMBERSHIP,
-    UNKNOWN // Default case
+    ORGANIZATION_GROUP_MEMBERSHIP
 }
 
 enum OperationType:byte {
