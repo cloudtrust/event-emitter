@@ -7,18 +7,14 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.stream.Collectors;
 
 public class TypesTest {
     protected <E extends Enum<E>> void validateNames(Class<E> enumClass, String[] flatbufferTypes) {
-        List<String> enumNames = Arrays.stream(enumClass.getEnumConstants()).map(Enum::name).toList();
-        int flatLen = flatbufferTypes.length - ("UNKNOWN".equals(flatbufferTypes[flatbufferTypes.length-1]) ? 1 : 0);
-        for(int i=0; i<Math.max(enumNames.size(), flatLen); i++) {
-            String valueEnum = i<enumNames.size() ? enumNames.get(i) : "<missing>";
-            String valueFlatb = i<flatbufferTypes.length ? flatbufferTypes[i] : "<missing>";
-            Assertions.assertEquals(valueEnum, valueFlatb);
-        }
-        Assertions.assertEquals(enumNames.size(), flatLen);
+        var enumNames = Arrays.stream(enumClass.getEnumConstants()).map(Enum::name).collect(Collectors.toSet());
+        var flatbufferTypeList = Arrays.stream(flatbufferTypes).filter(t -> !"UNKNOWN".equals(t)).toList();
+        Assertions.assertEquals(enumNames.size(), flatbufferTypeList.size(), "The number of types in the enum " + enumClass.getName() + " does not match the number of types in the flatbuffer definition");
+        flatbufferTypeList.forEach(t -> Assertions.assertTrue(enumNames.contains(t), "The type " + t + " is defined in the flatbuffer definition but not in the enum " + enumClass.getName()));
     }
 
     /**

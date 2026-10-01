@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 class SerializationUtilsTest {
-    private long UID = 123456789L;
+    private final long UID = 123456789L;
 
     @Test
     void testEventToJson() throws JsonProcessingException {
@@ -178,11 +178,20 @@ class SerializationUtilsTest {
         return adminEvent;
     }
 
+    private static String expectedFlatName(Enum<?> value, String[] flatNames) {
+        return value == null ? flatNames[0] : value.name();
+    }
+
+    private static String flatName(int flatValue, String[] flatNames) {
+        return flatNames[flatValue];
+    }
+
     private boolean equals(Event event, flatbuffers.events.Event eventFlat) {
-        Map<String, String> eventDetails = ObjectUtils.defaultIfNull(event.getDetails(), Collections.emptyMap());
+        Map<String, String> eventDetails = ObjectUtils.getIfNull(event.getDetails(), Collections.emptyMap());
         return new EqualsBuilder()
                 .append(event.getTime(), eventFlat.time())
-                .append(event.getType().ordinal(), eventFlat.type())
+                .append(expectedFlatName(event.getType(), flatbuffers.events.EventType.names),
+                        flatName(eventFlat.type(), flatbuffers.events.EventType.names))
                 .append(event.getRealmId(), eventFlat.realmId())
                 .append(event.getClientId(), eventFlat.clientId())
                 .append(event.getUserId(), eventFlat.userId())
@@ -194,15 +203,15 @@ class SerializationUtilsTest {
     }
 
     private boolean equals(ExtendedAdminEvent adminEvent, flatbuffers.events.AdminEvent adminEventFlat) {
-        int adminEventResourceType = adminEvent.getResourceType() == null ? 0 : adminEvent.getResourceType().ordinal();
-        int adminEventOperationType = adminEvent.getOperationType() == null ? 0 : adminEvent.getOperationType().ordinal();
+        String adminEventResourceType = expectedFlatName(adminEvent.getResourceType(), flatbuffers.events.ResourceType.names);
+        String adminEventOperationType = expectedFlatName(adminEvent.getOperationType(), flatbuffers.events.OperationType.names);
         int adminEventDetailsSize = adminEvent.getDetails() == null ? 0 : adminEvent.getDetails().size();
         return new EqualsBuilder()
                 .append(adminEvent.getTime(), adminEventFlat.time())
                 .append(adminEvent.getRealmId(), adminEventFlat.realmId())
                 .appendSuper(equals(adminEvent.getAuthDetails(), adminEventFlat.authDetails()))
-                .append(adminEventResourceType, adminEventFlat.resourceType())
-                .append(adminEventOperationType, adminEventFlat.operationType())
+                .append(adminEventResourceType, flatName(adminEventFlat.resourceType(), flatbuffers.events.ResourceType.names))
+                .append(adminEventOperationType, flatName(adminEventFlat.operationType(), flatbuffers.events.OperationType.names))
                 .append(adminEvent.getResourcePath(), adminEventFlat.resourcePath())
                 .append(adminEvent.getRepresentation(), adminEventFlat.representation())
                 .append(adminEventDetailsSize, adminEventFlat.detailsLength())
