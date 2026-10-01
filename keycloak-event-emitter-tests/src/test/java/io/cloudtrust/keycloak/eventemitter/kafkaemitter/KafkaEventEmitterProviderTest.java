@@ -54,7 +54,7 @@ class KafkaEventEmitterProviderTest {
         RealmModel realm = new RealmAdapter(null, null, realmEntity);
         Mockito.when(keycloakSession.realms().getRealm(Mockito.any())).thenReturn(realm);
 
-        mockProducer = new MockProducer<>(true, new StringSerializer(), new StringSerializer());
+        mockProducer = new MockProducer<>(true, null, new StringSerializer(), new StringSerializer());
     }
 
     @Test
@@ -105,7 +105,7 @@ class KafkaEventEmitterProviderTest {
     @Test
     void testNoConnection() {
         IdGenerator idGenerator = new IdGenerator(1, 1);
-        try (MockProducer<String, String> stepMockProducer = new MockProducer<>(false, new StringSerializer(), new StringSerializer())) {
+        try (MockProducer<String, String> stepMockProducer = new MockProducer<>(false, null, new StringSerializer(), new StringSerializer())) {
             LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents = new LinkedBlockingQueue<>(50);
 
             KafkaEventEmitterState state = new KafkaEventEmitterState();
