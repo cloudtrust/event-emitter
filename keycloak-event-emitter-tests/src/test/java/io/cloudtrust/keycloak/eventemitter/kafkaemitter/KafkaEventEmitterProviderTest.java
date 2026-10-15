@@ -60,7 +60,7 @@ class KafkaEventEmitterProviderTest {
     @Test
     void testEventFlatbufferFormatOutput() {
         IdGenerator idGenerator = new IdGenerator(1, 1);
-        LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents = new LinkedBlockingQueue<>(50);
+        LinkedBlockingQueue<EventRecord> pendingEvents = new LinkedBlockingQueue<>(50);
 
         KafkaEventEmitterState state = new KafkaEventEmitterState();
         state.working();
@@ -82,7 +82,7 @@ class KafkaEventEmitterProviderTest {
     @Test
     void testAdminEventFlatbufferFormatOutput() {
         IdGenerator idGenerator = new IdGenerator(1, 1);
-        LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents = new LinkedBlockingQueue<>(50);
+        LinkedBlockingQueue<EventRecord> pendingEvents = new LinkedBlockingQueue<>(50);
 
         KafkaEventEmitterState state = new KafkaEventEmitterState();
         state.working();
@@ -106,7 +106,7 @@ class KafkaEventEmitterProviderTest {
     void testNoConnection() {
         IdGenerator idGenerator = new IdGenerator(1, 1);
         try (MockProducer<String, String> stepMockProducer = new MockProducer<>(false, null, new StringSerializer(), new StringSerializer())) {
-            LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents = new LinkedBlockingQueue<>(50);
+            LinkedBlockingQueue<EventRecord> pendingEvents = new LinkedBlockingQueue<>(50);
 
             KafkaEventEmitterState state = new KafkaEventEmitterState();
             state.working();

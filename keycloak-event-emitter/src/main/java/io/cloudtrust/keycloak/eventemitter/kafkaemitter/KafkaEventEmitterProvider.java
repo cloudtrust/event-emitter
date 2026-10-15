@@ -1,27 +1,16 @@
 package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
-import io.cloudtrust.keycloak.eventemitter.CompleteEventUtils;
-import io.cloudtrust.keycloak.eventemitter.SerializationUtils;
-import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
-import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedAdminEvent;
-import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedEvent;
 import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 
-import java.nio.ByteBuffer;
-import java.util.Base64;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Consumer;
 
 public class KafkaEventEmitterProvider implements EventListenerProvider {
     private static final Logger logger = Logger.getLogger(KafkaEventEmitterProvider.class);
@@ -31,14 +20,14 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
     private final String eventTopic;
     private final String adminEventTopic;
     private final IdGenerator idGenerator;
-    private final LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents;
+    private final LinkedBlockingQueue<EventRecord> pendingEvents;
 
     private final KafkaEventEmitterState state;
     private final Lock stateLock;
 
     KafkaEventEmitterProvider(KeycloakSession keycloakSession, Producer<String, String> producer, String eventTopic,
                               String adminEventTopic, IdGenerator idGenerator,
-                              LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents, KafkaEventEmitterState state, Lock stateLock) {
+                              LinkedBlockingQueue<EventRecord> pendingEvents, KafkaEventEmitterState state, Lock stateLock) {
         this.keycloakSession = keycloakSession;
         this.producer = producer;
         this.eventTopic = eventTopic;
@@ -51,99 +40,60 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(Event event) {
-        CompleteEventUtils.completeEventAttributes(keycloakSession, event);
-        long uid = idGenerator.nextValidId();
-        IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
-
-        // Flatbuffer serialization
-        ByteBuffer buffer = SerializationUtils.toFlat(identifiedEvent);
-
-        produceEvent(buffer, identifiedEvent.getUserId(), eventTopic);
+        produceEvent(EventRecord.ofEvent(keycloakSession, idGenerator, event, eventTopic));
     }
 
     @Override
     public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
-        long uid = idGenerator.nextValidId();
-        IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
-        ExtendedAdminEvent customAdminEvent = CompleteEventUtils.completeAdminEventAttributes(keycloakSession, identifiedAdminEvent);
-
-        // Flatbuffer serialization
-        ByteBuffer buffer = SerializationUtils.toFlat(customAdminEvent);
-
-        produceEvent(buffer, customAdminEvent.getAuthDetails().getUserId(), adminEventTopic);
+        produceEvent(EventRecord.ofAdminEvent(keycloakSession, idGenerator, adminEvent, adminEventTopic));
     }
 
     @Override
     public void close() {
-
     }
 
-    private void findUser(String userId, String realmId, Consumer<UserModel> whenUserFound) {
-        RealmModel realm = keycloakSession.realms().getRealm(realmId);
-        if (realm != null) {
-            UserModel user = keycloakSession.users().getUserById(realm, userId);
+    private void send(EventRecord eventRecord) {
+        producer.send(eventRecord.getProducerRecord(), (RecordMetadata recordMetadata, Exception e) -> {
+            if (e != null) {
+                logger.errorf(e, "Failed to send event to Kafka, %s", eventRecord);
+            }
+        });
+    }
 
-            if (user != null) {
-                whenUserFound.accept(user);
+    private void enqueue(EventRecord eventRecord, String dropReason) {
+        while (!pendingEvents.offer(eventRecord)) {
+            EventRecord skippedRecord = pendingEvents.poll();
+            if (skippedRecord != null) {
+                logger.errorf("Event dropped due to %s, %s, current state: %s", dropReason, skippedRecord, state);
             }
         }
     }
 
-    private void produceEvent(ByteBuffer buffer, String key, String topic) {
-        byte[] b = new byte[buffer.remaining()];
-        buffer.get(b);
-
-        String eventValue = Base64.getEncoder().encodeToString(b);
-
-        // Event production in Kafka topic
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, eventValue);
-
+    private void produceEvent(EventRecord eventRecord) {
         if (state.isWorking()) {
-            producer.send(record, (RecordMetadata recordMetadata, Exception e) -> {
-                if (e != null) {
-                    logger.error(e);
-                    logger.error(record);
-                }
-            });
+            send(eventRecord);
         } else if (producer == null) {
             stateLock.lock();
-            while (!pendingEvents.offer(record)) {
-                ProducerRecord<String, String> skippedRecord = pendingEvents.poll();
-                if (skippedRecord != null) {
-                    logger.errorf("Event dropped due to full queue and producer is null, event: %s, current state: %s", skippedRecord, state);
-                }
-            }
+            enqueue(eventRecord, "full queue and producer is null");
             state.pending();
             stateLock.unlock();
         } else if (state.isStarting() || state.isPending()) {
             stateLock.lock();
-            while (!pendingEvents.offer(record)) {
-                ProducerRecord<String, String> skippedRecord = pendingEvents.poll();
-                if (skippedRecord != null) {
-                    logger.errorf("Event dropped due to full queue, event: %s, current state: %s", skippedRecord, state);
-                }
-            }
+            enqueue(eventRecord, "full queue");
 
             int pendingEventsSize = pendingEvents.size();
             for (int i = 0; i < pendingEventsSize; i++) {
-                ProducerRecord<String, String> polledRecord = pendingEvents.poll();
-
+                EventRecord polledRecord = pendingEvents.poll();
                 if (polledRecord == null) {
-                    return;
+                    break;
                 }
 
-                producer.send(polledRecord, (RecordMetadata recordMetadata, Exception e) -> {
-                    if (e != null) {
-                        logger.error(e);
-                        logger.error(record);
-                    }
-                });
+                send(polledRecord);
             }
             state.working();
             stateLock.unlock();
         } else {
-            logger.error(state);
-            logger.error(record);
+            logger.errorf("Kafka event emitter is in an indefinite state, event not sent: %s, current state: %s", eventRecord, state);
             throw new IllegalStateException("Kafka event consumer is in an indefinite state");
         }
     }
