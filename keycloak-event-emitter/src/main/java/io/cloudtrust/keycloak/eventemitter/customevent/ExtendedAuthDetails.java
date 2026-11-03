@@ -5,6 +5,7 @@ import org.keycloak.events.admin.AuthDetails;
 
 /**
  * Extension of the {@link AuthDetails} for adding the agent username
+ * (the copy constructor mirrors the fields of Keycloak AuthDetails, unchanged in Keycloak 26.8.1)
  */
 public class ExtendedAuthDetails extends AuthDetails {
 

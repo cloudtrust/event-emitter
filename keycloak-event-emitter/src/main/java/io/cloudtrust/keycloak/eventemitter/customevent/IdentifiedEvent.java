@@ -13,7 +13,9 @@ public class IdentifiedEvent extends Event implements HasUid {
     }
 
     /**
-     * Constructor by copy which add a uid to Event
+     * Constructor by copy which add a uid to Event.
+     * Copies the fields of the Keycloak Event that exist in the FlatBuffers schema (not id nor realmName)
+     * (unchanged in Keycloak 26.8.1: Event has the same fields)
      *
      * @param uid   for idempotence
      * @param event original event
