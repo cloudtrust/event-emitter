@@ -1,5 +1,6 @@
 package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
+import io.cloudtrust.keycloak.eventemitter.EmitterFiltering;
 import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -17,6 +18,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
 
     private final Producer<String, String> producer;
     private final KeycloakSession keycloakSession;
+    private final EmitterFiltering emitterFiltering;
     private final String eventTopic;
     private final String adminEventTopic;
     private final IdGenerator idGenerator;
@@ -25,11 +27,12 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
     private final KafkaEventEmitterState state;
     private final Lock stateLock;
 
-    KafkaEventEmitterProvider(KeycloakSession keycloakSession, Producer<String, String> producer, String eventTopic,
-                              String adminEventTopic, IdGenerator idGenerator,
+    KafkaEventEmitterProvider(KeycloakSession keycloakSession, Producer<String, String> producer, EmitterFiltering emitterFiltering,
+                              String eventTopic, String adminEventTopic, IdGenerator idGenerator,
                               LinkedBlockingQueue<EventRecord> pendingEvents, KafkaEventEmitterState state, Lock stateLock) {
         this.keycloakSession = keycloakSession;
         this.producer = producer;
+        this.emitterFiltering = emitterFiltering;
         this.eventTopic = eventTopic;
         this.adminEventTopic = adminEventTopic;
         this.idGenerator = idGenerator;
@@ -40,12 +43,16 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(Event event) {
-        produceEvent(EventRecord.ofEvent(keycloakSession, idGenerator, event, eventTopic));
+        if (emitterFiltering.passes(event)) {
+            produceEvent(EventRecord.ofEvent(keycloakSession, idGenerator, event, eventTopic));
+        }
     }
 
     @Override
     public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
-        produceEvent(EventRecord.ofAdminEvent(keycloakSession, idGenerator, adminEvent, adminEventTopic));
+        if (emitterFiltering.passes(adminEvent)) {
+            produceEvent(EventRecord.ofAdminEvent(keycloakSession, idGenerator, adminEvent, adminEventTopic));
+        }
     }
 
     @Override

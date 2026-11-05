@@ -1,5 +1,6 @@
 package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
+import io.cloudtrust.keycloak.eventemitter.EmitterFiltering;
 import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -56,6 +57,7 @@ public class KafkaEventEmitterProviderFactory implements EventListenerProviderFa
     private LinkedBlockingQueue<EventRecord> pendingEvents;
     private KafkaEventEmitterState state;
     private Lock stateLock;
+    private EmitterFiltering emitterFiltering;
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
@@ -63,11 +65,14 @@ public class KafkaEventEmitterProviderFactory implements EventListenerProviderFa
             state.starting();
             producer = new KafkaProducer<>(kafkaProperties);
         }
-        return new KafkaEventEmitterProvider(session, producer, eventTopic, adminEventTopic, idGenerator, pendingEvents, state, stateLock);
+        return new KafkaEventEmitterProvider(session, producer, emitterFiltering, eventTopic, adminEventTopic, idGenerator, pendingEvents, state, stateLock);
     }
 
     @Override
     public void init(Config.Scope config) {
+        // Events configuration
+        this.emitterFiltering = EmitterFiltering.create();
+
         // Kafka producer configuration
         eventTopic = getStringConfig(config, EVENT_TOPIC_CONFIG_KEY);
         adminEventTopic = getStringConfig(config, ADMIN_EVENT_TOPIC_CONFIG_KEY);
