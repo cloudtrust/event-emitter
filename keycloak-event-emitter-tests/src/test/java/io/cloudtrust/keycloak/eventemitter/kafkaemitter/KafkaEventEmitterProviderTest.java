@@ -1,5 +1,6 @@
 package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
+import io.cloudtrust.keycloak.eventemitter.EmitterFiltering;
 import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -12,6 +13,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -39,6 +41,8 @@ class KafkaEventEmitterProviderTest {
     private KeycloakSession keycloakSession;
     private MockProducer<String, String> mockProducer;
 
+    private EmitterFiltering emitterFiltering;
+
     @BeforeEach
     public void initMock() {
         MockitoAnnotations.openMocks(this);
@@ -55,6 +59,17 @@ class KafkaEventEmitterProviderTest {
         Mockito.when(keycloakSession.realms().getRealm(Mockito.any())).thenReturn(realm);
 
         mockProducer = new MockProducer<>(true, null, new StringSerializer(), new StringSerializer());
+
+        this.emitterFiltering = EmitterFiltering.create("""
+                {
+                    "eventFiltering": {
+                        "typeWhitelist": ["CLIENT_LOGIN"]
+                    },
+                    "adminEventFiltering": {
+                        "resourceTypeWhitelist": ["USER"]
+                    }
+                }
+                """);
     }
 
     @Test
@@ -64,7 +79,7 @@ class KafkaEventEmitterProviderTest {
 
         KafkaEventEmitterState state = new KafkaEventEmitterState();
         state.working();
-        KafkaEventEmitterProvider kafkaEventEmitterProvider = new KafkaEventEmitterProvider(keycloakSession, mockProducer, topicEvent, topicAdminEvent, idGenerator, pendingEvents, state, new ReentrantLock());
+        KafkaEventEmitterProvider kafkaEventEmitterProvider = new KafkaEventEmitterProvider(keycloakSession, mockProducer, emitterFiltering, topicEvent, topicAdminEvent, idGenerator, pendingEvents, state, new ReentrantLock());
 
         Event event = createEvent();
         kafkaEventEmitterProvider.onEvent(event);
@@ -86,7 +101,7 @@ class KafkaEventEmitterProviderTest {
 
         KafkaEventEmitterState state = new KafkaEventEmitterState();
         state.working();
-        KafkaEventEmitterProvider kafkaEventEmitterProvider = new KafkaEventEmitterProvider(keycloakSession, mockProducer, topicEvent, topicAdminEvent, idGenerator, pendingEvents, state, new ReentrantLock());
+        KafkaEventEmitterProvider kafkaEventEmitterProvider = new KafkaEventEmitterProvider(keycloakSession, mockProducer, emitterFiltering, topicEvent, topicAdminEvent, idGenerator, pendingEvents, state, new ReentrantLock());
 
         AdminEvent event = createAdminEvent();
         kafkaEventEmitterProvider.onEvent(event, false);
@@ -110,7 +125,7 @@ class KafkaEventEmitterProviderTest {
 
             KafkaEventEmitterState state = new KafkaEventEmitterState();
             state.working();
-            KafkaEventEmitterProvider kafkaEventEmitterProvider = new KafkaEventEmitterProvider(keycloakSession, mockProducer, topicEvent, topicAdminEvent, idGenerator, pendingEvents, state, new ReentrantLock());
+            KafkaEventEmitterProvider kafkaEventEmitterProvider = new KafkaEventEmitterProvider(keycloakSession, mockProducer, emitterFiltering, topicEvent, topicAdminEvent, idGenerator, pendingEvents, state, new ReentrantLock());
 
             stepMockProducer.errorNext(new RuntimeException("Test error"));
             Event event = createEvent();
@@ -131,6 +146,7 @@ class KafkaEventEmitterProviderTest {
         AdminEvent event = new AdminEvent();
         event.setTime(120001);
         event.setOperationType(OperationType.CREATE);
+        event.setResourceType(ResourceType.USER);
         AuthDetails authDetails = new AuthDetails();
         authDetails.setUserId(userId);
         event.setAuthDetails(authDetails);

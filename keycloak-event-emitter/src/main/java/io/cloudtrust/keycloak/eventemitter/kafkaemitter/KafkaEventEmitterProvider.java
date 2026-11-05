@@ -1,6 +1,7 @@
 package io.cloudtrust.keycloak.eventemitter.kafkaemitter;
 
 import io.cloudtrust.keycloak.eventemitter.CompleteEventUtils;
+import io.cloudtrust.keycloak.eventemitter.EmitterFiltering;
 import io.cloudtrust.keycloak.eventemitter.SerializationUtils;
 import io.cloudtrust.keycloak.eventemitter.customevent.ExtendedAdminEvent;
 import io.cloudtrust.keycloak.eventemitter.customevent.IdentifiedAdminEvent;
@@ -28,6 +29,7 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
 
     private final Producer<String, String> producer;
     private final KeycloakSession keycloakSession;
+    private final EmitterFiltering emitterFiltering;
     private final String eventTopic;
     private final String adminEventTopic;
     private final IdGenerator idGenerator;
@@ -36,11 +38,12 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
     private final KafkaEventEmitterState state;
     private final Lock stateLock;
 
-    KafkaEventEmitterProvider(KeycloakSession keycloakSession, Producer<String, String> producer, String eventTopic,
-                              String adminEventTopic, IdGenerator idGenerator,
+    KafkaEventEmitterProvider(KeycloakSession keycloakSession, Producer<String, String> producer, EmitterFiltering emitterFiltering,
+                              String eventTopic, String adminEventTopic, IdGenerator idGenerator,
                               LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents, KafkaEventEmitterState state, Lock stateLock) {
         this.keycloakSession = keycloakSession;
         this.producer = producer;
+        this.emitterFiltering = emitterFiltering;
         this.eventTopic = eventTopic;
         this.adminEventTopic = adminEventTopic;
         this.idGenerator = idGenerator;
@@ -51,6 +54,9 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(Event event) {
+        if (!emitterFiltering.passes(event)) {
+            return;
+        }
         CompleteEventUtils.completeEventAttributes(keycloakSession, event);
         long uid = idGenerator.nextValidId();
         IdentifiedEvent identifiedEvent = new IdentifiedEvent(uid, event);
@@ -63,6 +69,9 @@ public class KafkaEventEmitterProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+        if (!emitterFiltering.passes(adminEvent)) {
+            return;
+        }
         long uid = idGenerator.nextValidId();
         IdentifiedAdminEvent identifiedAdminEvent = new IdentifiedAdminEvent(uid, adminEvent);
         ExtendedAdminEvent customAdminEvent = CompleteEventUtils.completeAdminEventAttributes(keycloakSession, identifiedAdminEvent);
