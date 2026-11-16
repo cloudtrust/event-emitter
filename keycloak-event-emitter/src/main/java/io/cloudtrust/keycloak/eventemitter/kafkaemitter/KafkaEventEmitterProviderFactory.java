@@ -4,7 +4,6 @@ import io.cloudtrust.keycloak.eventemitter.snowflake.IdGenerator;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginCallbackHandler;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -54,7 +53,7 @@ public class KafkaEventEmitterProviderFactory implements EventListenerProviderFa
     private Producer<String, String> producer;
     private IdGenerator idGenerator;
     //Queue only used during STARTING state
-    private LinkedBlockingQueue<ProducerRecord<String, String>> pendingEvents;
+    private LinkedBlockingQueue<EventRecord> pendingEvents;
     private KafkaEventEmitterState state;
     private Lock stateLock;
 
