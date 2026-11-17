@@ -183,7 +183,8 @@ enum ResourceType:byte {
     ORGANIZATION,
     ORGANIZATION_MEMBERSHIP,
     ORGANIZATION_GROUP,
-    ORGANIZATION_GROUP_MEMBERSHIP
+    ORGANIZATION_GROUP_MEMBERSHIP,
+    WORKFLOW
     // Always add new values at the end of the enum, just before this comment, to avoid breaking existing clients.
 }
 
